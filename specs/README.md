@@ -25,7 +25,7 @@ y recibe **notificaciones** de cada llamada procesada.
 | Orquestación | n8n (self-hosted o cloud, en modo queue) | Webhooks de Twilio/ElevenLabs, evaluación de reglas, flujo post-llamada, notificaciones |
 | Telefonía | Twilio (Programmable Voice + Incoming Phone Numbers API) | Aprovisionamiento de números, recepción de llamadas, TwiML |
 | Voz IA | ElevenLabs Conversational AI (Agents Platform, integración nativa con Twilio) | Agente que contesta en español, transcripción, eventos post-llamada |
-| Resúmenes | Claude API (claude-sonnet) invocado desde n8n | Generación del resumen estructurado de la transcripción |
+| Resúmenes | OpenAI API (gpt-4o-mini) invocado desde n8n | Generación del resumen estructurado de la transcripción |
 | Notificaciones | Resend/SMTP (email) + Web Push (VAPID) | Aviso de llamada procesada / spam bloqueado |
 
 ### Diagrama de componentes (flujo de una llamada)
@@ -45,7 +45,7 @@ Llamante ──► Twilio (número del usuario)
        ▼             n8n /webhook/elevenlabs/post-call
    registra llamada         │ transcripción + metadata
    como bloqueada           ▼
-                     Claude API → resumen ──► Supabase (calls, call_summaries)
+                     OpenAI API → resumen ──► Supabase (calls, call_summaries)
                                                   │
                                                   ▼
                                        n8n → notificación (email/push)

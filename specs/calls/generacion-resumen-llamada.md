@@ -13,7 +13,7 @@ dashboard y las notificaciones.
 
 ## Comportamiento esperado
 - Trigger: webhook post-llamada procesado con `outcome = completed` y transcripción no vacía.
-- n8n invoca Claude (claude-sonnet) con un prompt versionado que produce **solo JSON** con:
+- n8n invoca OpenAI (gpt-4o-mini) con un prompt versionado que produce **solo JSON** con:
   - `caller_name`: nombre del emisor si se identificó, o `null`.
   - `caller_company`: empresa/organización, o `null`.
   - `reason`: motivo de la llamada en 1 oración.
@@ -25,22 +25,22 @@ dashboard y las notificaciones.
 - Tiempo objetivo: resumen disponible < 60 s después de finalizada la llamada.
 
 ## Casos borde
-- Claude devuelve JSON malformado o con fences de Markdown → limpiar fences y reintentar parse; si falla, reintentar la generación 1 vez; si vuelve a fallar, guardar resumen degradado: `summary = primeros 500 caracteres de la transcripción`, `category = desconocida`, y marcar `is_degraded = true`.
+- OpenAI devuelve JSON malformado o con fences de Markdown → limpiar fences y reintentar parse; si falla, reintentar la generación 1 vez; si vuelve a fallar, guardar resumen degradado: `summary = primeros 500 caracteres de la transcripción`, `category = desconocida`, y marcar `is_degraded = true`.
 - Transcripción muy corta (< 20 caracteres útiles) → no invocar a Claude; `summary = "Llamada sin contenido relevante"`, `category = desconocida`.
-- API de Claude no disponible (5xx / rate limit) → reintentos con backoff (3x); si agota, encolar la fila en estado `pending_summary` y reprocesar con un flujo n8n programado cada 10 min (el resumen puede llegar tarde, nunca perderse).
+- API de OpenAI no disponible (5xx / rate limit) → reintentos con backoff (3x); si agota, encolar la fila en estado `pending_summary` y reprocesar con un flujo n8n programado cada 10 min (el resumen puede llegar tarde, nunca perderse).
 - Webhook duplicado de ElevenLabs → el upsert por `call_id` garantiza un solo resumen.
 - Transcripción contiene datos sensibles dictados por el emisor (números de tarjeta, etc.) → se persiste tal cual en MVP (es el registro fiel); acceso protegido por RLS. Redacción automática queda fuera de alcance y documentada como riesgo.
 
 ## Criterios de aceptación
 - [ ] Una llamada completada produce exactamente un resumen con los 6 campos del esquema.
 - [ ] El resumen está en español independientemente del idioma del emisor.
-- [ ] Con la API de Claude caída (simulada), la llamada queda en `pending_summary` y se resuelve al reprocesar.
+- [ ] Con la API de OpenAI caída (simulada), la llamada queda en `pending_summary` y se resuelve al reprocesar.
 - [ ] Un webhook duplicado no genera resumen duplicado.
 - [ ] El campo `category` solo admite los 5 valores del enum (constraint en DB).
 
 ## Dependencias
 - `api/webhook-elevenlabs-post-llamada.md` (proveedor de la transcripción).
-- Claude API (credencial en n8n).
+- OpenAI API (credencial en n8n).
 - Tablas `calls`, `call_summaries` (ver `datos/modelo-datos-core.md`).
 
 ## Fuera de alcance

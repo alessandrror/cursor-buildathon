@@ -2,6 +2,8 @@ export const routes = {
   home: "/",
   signIn: "/sign-in",
   signUp: "/sign-up",
+  voiceOnboarding: "/onboarding/voz",
+  signUpForVoiceOnboarding: "/sign-up?redirect_url=/onboarding/voz",
   dashboard: "/dashboard",
   settings: "/settings",
   summaryDetail: (id: string) => `/dashboard/summaries/${id}`,

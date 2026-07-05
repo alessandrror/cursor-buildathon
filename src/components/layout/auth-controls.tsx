@@ -64,7 +64,7 @@ export function ClerkSignUpButton({
 }: Omit<ClerkAuthLinkProps, "href">) {
   return (
     <ClerkAuthLink
-      href={routes.signUp}
+      href={routes.signUpForVoiceOnboarding}
       variant={variant}
       size={size}
       className={className}
@@ -102,7 +102,11 @@ export function ClerkAccountCta({
   }
 
   return (
-    <ClerkAuthLink href={routes.signUp} className={className} {...props}>
+    <ClerkAuthLink
+      href={routes.signUpForVoiceOnboarding}
+      className={className}
+      {...props}
+    >
       {children}
     </ClerkAuthLink>
   );

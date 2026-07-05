@@ -1,0 +1,22 @@
+---
+description: Integrar/adaptar vistas y flujos desde el diseño de Figma de GhostLine
+globs: src/app/**,src/components/**
+alwaysApply: false
+---
+
+# Adaptar vistas desde Figma
+
+Al implementar o adaptar UI de GhostLine, usar el diseño de Figma como referencia.
+
+- **Archivo Figma:** fileKey `jPSxrx2T9RGogjNQRUEOAe`.
+- **Mapa frame → ruta/componente + node-ids:** `specs/design/figma-frames-map.md`.
+- **Cómo adaptar (pasos, reglas y criterios de aceptación):** `specs/design/agent-playbook.md`.
+
+Reglas vinculantes:
+- Extraer el diseño con el MCP de Figma (`get_design_context`, `get_screenshot`) por node-id;
+  no inventar valores.
+- Tokens solo desde `src/app/globals.css`; usar utilidades (`bg-primary`, `text-muted-foreground`,
+  `rounded-lg`, `font-display`). Cero colores hard-codeados.
+- Reutilizar `src/components/ui/*` y `src/components/brand/ghostline-logo.tsx`; íconos `lucide-react`.
+- Vistas nuevas (Onboarding, Ajustes, Clonación de voz) → primero spec (SDD) antes de implementar.
+- Verificar light y dark. Sin marcadores de generación por IA en commits/PR.

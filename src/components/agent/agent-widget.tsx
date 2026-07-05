@@ -3,22 +3,22 @@ import Script from "next/script";
 import { useEffect, useState } from "react";
 
 export function AgentWidget({ ownerName }: { ownerName: string }) {
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [agentId, setAgentId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/agent/signed-url")
       .then((r) => r.json())
-      .then((d) => setSignedUrl(d.signed_url))
+      .then((d) => setAgentId(d.agent_id ?? null))
       .catch(console.error);
   }, []);
 
-  if (!signedUrl) return null;
+  if (!agentId) return null;
 
   return (
     <>
       {/* @ts-expect-error — web component sin tipos */}
       <elevenlabs-convai
-        signed-url={signedUrl}
+        agent-id={agentId}
         dynamic-variables={JSON.stringify({ owner_name: ownerName })}
       />
       <Script

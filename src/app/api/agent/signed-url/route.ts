@@ -17,5 +17,5 @@ export async function GET() {
   }
 
   const { signed_url } = await res.json();
-  return Response.json({ signed_url });
+  return Response.json({ signed_url, agent_id: AGENT_ID });
 }

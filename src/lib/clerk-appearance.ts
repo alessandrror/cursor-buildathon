@@ -1,13 +1,24 @@
 import type { Appearance } from "@clerk/types";
 
+/**
+ * Apariencia de los componentes de Clerk derivada del design system GhostLine.
+ * Los colores referencian los tokens CSS definidos en `globals.css` (una sola
+ * fuente de verdad) — así Clerk hereda la paleta y el tema claro/oscuro sin
+ * duplicar valores hex. Clerk soporta oficialmente `var(--token)` en `variables`.
+ */
 export const clerkAppearance: Appearance = {
   variables: {
-    colorPrimary: "#1E4D3B",
-    colorText: "#14261F",
-    colorBackground: "#FBFAF5",
-    colorInputBackground: "#FFFFFF",
-    colorInputText: "#14261F",
-    borderRadius: "0.75rem",
+    colorPrimary: "var(--primary)",
+    colorText: "var(--foreground)",
+    colorTextSecondary: "var(--muted-foreground)",
+    colorBackground: "var(--background)",
+    colorInputBackground: "var(--card)",
+    colorInputText: "var(--foreground)",
+    colorDanger: "var(--destructive)",
+    colorSuccess: "var(--success)",
+    colorWarning: "var(--warning)",
+    colorNeutral: "var(--foreground)",
+    borderRadius: "var(--radius-md)",
     fontFamily: "var(--font-hanken), sans-serif",
     fontFamilyButtons: "var(--font-hanken), sans-serif",
   },

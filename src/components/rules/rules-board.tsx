@@ -1,12 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
+<<<<<<< HEAD
 import {
   Ban,
   Check,
   Clock3,
   EyeOff,
   Loader2,
+=======
+import Link from "next/link";
+import {
+  ArrowRight,
+  Ban,
+  Clock3,
+  EyeOff,
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
   Plus,
   ShieldCheck,
   ShieldX,
@@ -19,11 +28,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+<<<<<<< HEAD
 import { saveAnsweringRules } from "@/lib/rules/client";
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 import type {
   AnsweringRulesConfig,
   RuleListItem,
 } from "@/lib/supabase/answering-rules";
+<<<<<<< HEAD
+=======
+import { routes } from "@/lib/routes";
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 import { cn } from "@/lib/utils";
 
 type RulesBoardProps = {
@@ -32,18 +48,45 @@ type RulesBoardProps = {
 
 type RuleListKind = "whitelist" | "blacklist" | "prefixBlock";
 
+<<<<<<< HEAD
+=======
+const fallbackWhiteList: RuleListItem[] = [
+  { id: "example-family", value: "+503 7712 4408", active: true },
+  { id: "example-pharmacy", value: "+503 2260 1180", active: true },
+  { id: "example-bank", value: "Banco (oficial)", active: true },
+];
+
+const fallbackBlackList: RuleListItem[] = [
+  { id: "example-collection", value: "+503 2555 0142", active: true },
+  { id: "example-spam", value: "+1 809 555 7788", active: true },
+];
+
+const fallbackPrefixes: RuleListItem[] = [
+  { id: "example-prefix", value: "+1800", active: true },
+];
+
+function withFallback(list: RuleListItem[], fallback: RuleListItem[]) {
+  return list.length > 0 ? list : fallback;
+}
+
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 function getActiveCount(list: RuleListItem[]) {
   return list.filter((item) => item.active).length;
 }
 
 function createRuleItem(value: string): RuleListItem {
   return {
+<<<<<<< HEAD
     id: `temp-${value}-${Date.now()}`,
+=======
+    id: `${value}-${Date.now()}`,
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
     value,
     active: true,
   };
 }
 
+<<<<<<< HEAD
 function buildRulesPayload(params: {
   scheduleStart: string;
   scheduleEnd: string;
@@ -81,12 +124,33 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+=======
+export function RulesBoard({ initialRules }: RulesBoardProps) {
+  const [scheduleStart, setScheduleStart] = useState(initialRules.schedule.start);
+  const [scheduleEnd, setScheduleEnd] = useState(initialRules.schedule.end);
+  const [anonymousAction, setAnonymousAction] = useState(
+    initialRules.anonymousAction,
+  );
+  const [whitelist, setWhitelist] = useState(() =>
+    withFallback(initialRules.whitelist, fallbackWhiteList),
+  );
+  const [blacklist, setBlacklist] = useState(() =>
+    withFallback(initialRules.blacklist, fallbackBlackList),
+  );
+  const [prefixBlock, setPrefixBlock] = useState(() =>
+    withFallback(initialRules.prefixBlock, fallbackPrefixes),
+  );
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 
   const stats = useMemo(
     () => [
       {
         label: "Horario",
+<<<<<<< HEAD
         value: scheduleActive ? `${scheduleStart}-${scheduleEnd}` : "24/7",
+=======
+        value: `${scheduleStart}-${scheduleEnd}`,
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
         icon: Clock3,
         tone: "text-warning",
       },
@@ -109,6 +173,7 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
         tone: "text-destructive",
       },
     ],
+<<<<<<< HEAD
     [
       anonymousAction,
       blacklist,
@@ -198,6 +263,20 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
             </p>
           ) : null}
         </div>
+=======
+    [anonymousAction, blacklist, scheduleEnd, scheduleStart, whitelist],
+  );
+
+  return (
+    <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-10">
+      <header className="max-w-3xl">
+        <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">
+          Reglas de contestación
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Define qué llamadas atiende el agente y cuáles se rechazan.
+        </p>
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
       </header>
 
       <section aria-label="Resumen de reglas" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -243,6 +322,7 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             <div className="rounded-lg bg-secondary/45 p-4">
+<<<<<<< HEAD
               <div className="mb-3 flex items-center justify-between gap-3">
                 <Label className="font-display font-bold">
                   Horario de atención
@@ -259,13 +339,21 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
                   />
                 </div>
               </div>
+=======
+              <Label className="mb-3 block font-display font-bold">
+                Horario de atención
+              </Label>
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
               <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                 <Input
                   type="time"
                   value={scheduleStart}
                   onChange={(event) => setScheduleStart(event.target.value)}
                   aria-label="Hora de inicio"
+<<<<<<< HEAD
                   disabled={!scheduleActive}
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
                 />
                 <span className="text-muted-foreground" aria-hidden>
                   -
@@ -275,11 +363,18 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
                   value={scheduleEnd}
                   onChange={(event) => setScheduleEnd(event.target.value)}
                   aria-label="Hora de fin"
+<<<<<<< HEAD
                   disabled={!scheduleActive}
                 />
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
                 Zona: America/El_Salvador. Desactiva el horario para atender 24/7.
+=======
+                />
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Zona: America/El_Salvador
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
               </p>
             </div>
 
@@ -328,7 +423,10 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
           icon={ShieldCheck}
           iconClassName="text-success"
           placeholder="Añadir número..."
+<<<<<<< HEAD
           emptyHint="Los números en lista blanca siempre se atienden."
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
           items={whitelist}
           onChange={setWhitelist}
           kind="whitelist"
@@ -339,7 +437,10 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
           icon={ShieldX}
           iconClassName="text-destructive"
           placeholder="Añadir número..."
+<<<<<<< HEAD
           emptyHint="Los números en lista negra siempre se rechazan."
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
           items={blacklist}
           onChange={setBlacklist}
           kind="blacklist"
@@ -350,12 +451,35 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
           icon={Ban}
           iconClassName="text-warning"
           placeholder="Añadir prefijo..."
+<<<<<<< HEAD
           emptyHint="Ejemplo: +1800 para bloquear toll-free."
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
           items={prefixBlock}
           onChange={setPrefixBlock}
           kind="prefixBlock"
         />
       </section>
+<<<<<<< HEAD
+=======
+
+      <section className="rounded-xl bg-primary px-5 py-5 text-primary-foreground shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-6">
+        <div>
+          <h2 className="font-display text-xl font-black tracking-tight">
+            Pruébalo antes de una llamada real
+          </h2>
+          <p className="mt-1 text-sm text-primary-foreground/75">
+            Simula distintos escenarios y mira qué decidirían tus reglas.
+          </p>
+        </div>
+        <Button className="mt-4 bg-primary-foreground text-primary hover:bg-primary-foreground/90 sm:mt-0" asChild>
+          <Link href={routes.dashboardSimulator}>
+            Abrir simulador
+            <ArrowRight data-icon="inline-end" />
+          </Link>
+        </Button>
+      </section>
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
     </div>
   );
 }
@@ -366,7 +490,10 @@ type RuleListCardProps = {
   icon: LucideIcon;
   iconClassName: string;
   placeholder: string;
+<<<<<<< HEAD
   emptyHint: string;
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
   items: RuleListItem[];
   onChange: (items: RuleListItem[]) => void;
   kind: RuleListKind;
@@ -378,7 +505,10 @@ function RuleListCard({
   icon: Icon,
   iconClassName,
   placeholder,
+<<<<<<< HEAD
   emptyHint,
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
   items,
   onChange,
   kind,
@@ -393,20 +523,32 @@ function RuleListCard({
     setDraft("");
   }
 
+<<<<<<< HEAD
   function toggleItem(id: string | undefined, value: string) {
     onChange(
       items.map((item) =>
         (item.id ?? item.value) === (id ?? value)
           ? { ...item, active: !item.active }
           : item,
+=======
+  function toggleItem(id: string) {
+    onChange(
+      items.map((item) =>
+        item.id === id ? { ...item, active: !item.active } : item,
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
       ),
     );
   }
 
+<<<<<<< HEAD
   function removeItem(id: string | undefined, value: string) {
     onChange(
       items.filter((item) => (item.id ?? item.value) !== (id ?? value)),
     );
+=======
+  function removeItem(id: string) {
+    onChange(items.filter((item) => item.id !== id));
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
   }
 
   return (
@@ -447,6 +589,7 @@ function RuleListCard({
         </div>
 
         <div className="mt-3 flex flex-col gap-2">
+<<<<<<< HEAD
           {items.length === 0 ? (
             <p className="rounded-md bg-secondary/45 px-3 py-3 text-sm text-muted-foreground">
               {emptyHint}
@@ -478,6 +621,33 @@ function RuleListCard({
               </div>
             ))
           )}
+=======
+          {items.map((item) => (
+            <div
+              key={`${kind}-${item.id}`}
+              className="flex items-center gap-3 rounded-md bg-secondary/45 px-3 py-2"
+            >
+              <p className="min-w-0 flex-1 truncate text-sm font-semibold">
+                {item.value}
+              </p>
+              <Switch
+                checked={item.active}
+                onCheckedChange={() => toggleItem(item.id)}
+                aria-label={`Activar ${item.value}`}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 text-destructive"
+                onClick={() => removeItem(item.id)}
+                aria-label={`Eliminar ${item.value}`}
+              >
+                <Trash2 aria-hidden />
+              </Button>
+            </div>
+          ))}
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
         </div>
       </CardContent>
     </Card>

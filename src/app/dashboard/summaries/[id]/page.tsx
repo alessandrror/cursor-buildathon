@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
 
 import { CallSummaryView } from "@/components/dashboard/call-summary-view";
+<<<<<<< HEAD
 import {
   getCallDetailForDashboard,
   isMockCallsEnabled,
 } from "@/lib/calls/data-source";
+=======
+import { getCallDetailForDashboard } from "@/lib/calls/data-source";
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 type SummaryDetailPageProps = {
@@ -33,5 +37,9 @@ export default async function SummaryDetailPage({
     notFound();
   }
 
+<<<<<<< HEAD
   return <CallSummaryView call={call} showMockBanner={useMock} />;
+=======
+  return <CallSummaryView call={call} />;
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 }

@@ -19,7 +19,10 @@ type AgentWidgetProps = {
 
 export function AgentWidget({ ownerName, clerkUserId }: AgentWidgetProps) {
   const [agentId, setAgentId] = useState<string | null>(null);
+<<<<<<< HEAD
   const [overrideVoiceId, setOverrideVoiceId] = useState<string | null>(null);
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
   const [microphoneStatus, setMicrophoneStatus] = useState<
     "checking" | "supported" | "unsupported"
   >("checking");

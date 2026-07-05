@@ -11,12 +11,16 @@ import { cn } from "@/lib/utils";
 
 type DashboardShellProps = {
   children: React.ReactNode;
-  activeNav?: "calls" | "settings";
+  activeNav?: "calls" | "settings" | "simulator";
 };
 
 const navItems = [
   { href: routes.dashboard, label: "Panel", id: "calls" as const },
   { href: routes.dashboardRules, label: "Reglas", id: "settings" as const },
+<<<<<<< HEAD
+=======
+  { href: routes.dashboardSimulator, label: "Simulador", id: "simulator" as const },
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 ];
 
 export function DashboardShell({
@@ -24,7 +28,13 @@ export function DashboardShell({
   activeNav = "calls",
 }: DashboardShellProps) {
   const pathname = usePathname();
+<<<<<<< HEAD
   const currentNav = pathname.startsWith(routes.dashboardRules)
+=======
+  const currentNav = pathname.startsWith(routes.dashboardSimulator)
+    ? "simulator"
+    : pathname.startsWith(routes.dashboardRules)
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
     ? "settings"
     : activeNav;
 

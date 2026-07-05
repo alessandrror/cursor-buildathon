@@ -6,11 +6,17 @@ import { DashboardCallBoard } from "@/components/dashboard/dashboard-call-board"
 import { DashboardCallSync } from "@/components/dashboard/dashboard-call-sync";
 import { CallMetricsGrid } from "@/components/dashboard/call-metrics";
 import { CallsEmptyState } from "@/components/dashboard/calls-empty-state";
+<<<<<<< HEAD
 import { MockDataBanner } from "@/components/dashboard/mock-data-banner";
 import {
   getCallsForDashboard,
   getGhostLineNumberForDashboard,
   isMockCallsEnabled,
+=======
+import {
+  getCallsForDashboard,
+  getGhostLineNumberForDashboard,
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 } from "@/lib/calls/data-source";
 import { computeCallMetrics } from "@/lib/calls/presentation";
 import {
@@ -68,8 +74,11 @@ export default async function DashboardPage() {
         </p>
       </header>
 
+<<<<<<< HEAD
       {useMock && <MockDataBanner />}
 
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
       <section
         aria-label="Número GhostLine"
         className="rounded-xl bg-primary px-5 py-4 text-primary-foreground shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-6"

@@ -2,7 +2,11 @@ import type { AnsweringRuleType, DbAnsweringRule } from "@/types/database";
 import { getClerkScopedSupabase } from "@/lib/supabase/clerk-scoped-server";
 
 export type RuleListItem = {
+<<<<<<< HEAD
   id?: string;
+=======
+  id: string;
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
   value: string;
   active: boolean;
 };
@@ -19,7 +23,11 @@ export type AnsweringRulesConfig = {
   prefixBlock: RuleListItem[];
 };
 
+<<<<<<< HEAD
 export const defaultRulesConfig: AnsweringRulesConfig = {
+=======
+const defaultRulesConfig: AnsweringRulesConfig = {
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
   schedule: {
     start: "08:00",
     end: "20:00",
@@ -119,6 +127,7 @@ export async function getAnsweringRulesForCurrentUser(): Promise<AnsweringRulesC
 
   return normalizeRules((data ?? []) as DbAnsweringRule[]);
 }
+<<<<<<< HEAD
 
 async function getUserCountryCode(
   userId: string,
@@ -243,3 +252,5 @@ export async function getCountryCodeForCurrentUser(): Promise<string> {
 
   return getUserCountryCode(userId, supabase, useUserFilter);
 }
+=======
+>>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)

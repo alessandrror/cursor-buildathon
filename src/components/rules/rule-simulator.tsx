@@ -152,6 +152,7 @@ function CustomSimulator({
           id="sim-when"
           type="datetime-local"
           value={when}
+          className="[&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 dark:[&::-webkit-calendar-picker-indicator]:invert"
           onChange={(e) => setWhen(e.target.value)}
         />
       </div>

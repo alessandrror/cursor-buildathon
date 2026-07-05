@@ -22,7 +22,7 @@ export function Segmented<T extends string>({
       role="group"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex flex-wrap gap-1 rounded-md border border-border bg-muted p-1",
+        "inline-flex flex-wrap gap-1 rounded-lg border border-border bg-muted p-1",
         className,
       )}
     >
@@ -35,10 +35,10 @@ export function Segmented<T extends string>({
             aria-pressed={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              "rounded-sm px-3 py-1.5 text-sm font-medium transition-colors",
+              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               active
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-background hover:text-foreground",
             )}
           >
             {option.label}

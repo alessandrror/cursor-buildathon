@@ -13,7 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { useAnsweringRules } from "@/hooks/use-answering-rules";
 import {
@@ -35,6 +35,14 @@ import { Segmented } from "@/components/rules/segmented";
 import { SectionCard, StatChip } from "@/components/rules/ui";
 
 const rejectShort = { busy: "Ocupado", hangup: "Colgar", message: "Mensaje" } as const;
+
+/** Hace visible el ícono del picker nativo en tema oscuro. */
+const timeInputClass =
+  "w-28 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 dark:[&::-webkit-calendar-picker-indicator]:invert";
+
+function countLabel(n: number) {
+  return `${n} ${n === 1 ? "número" : "números"}`;
+}
 
 export function RulesManager() {
   const {
@@ -90,13 +98,13 @@ export function RulesManager() {
           icon={<ShieldCheck className="size-4" />}
           tint="bg-success/15 text-success"
           label="Lista blanca"
-          value={`${whitelist.filter((r) => r.isActive).length} números`}
+          value={countLabel(whitelist.filter((r) => r.isActive).length)}
         />
         <StatChip
           icon={<ShieldAlert className="size-4" />}
           tint="bg-destructive/10 text-destructive"
           label="Lista negra"
-          value={`${blacklist.filter((r) => r.isActive).length} números`}
+          value={countLabel(blacklist.filter((r) => r.isActive).length)}
         />
       </div>
 
@@ -113,21 +121,29 @@ export function RulesManager() {
               Horario de atención
             </Label>
             <div className="flex items-center gap-2">
+              <label htmlFor="schedule-start" className="sr-only">
+                Hora de inicio
+              </label>
               <Input
+                id="schedule-start"
+                name="schedule-start"
                 type="time"
-                aria-label="Hora de inicio"
                 value={schedule.start}
-                className="w-28"
+                className={timeInputClass}
                 onChange={(e) =>
                   setSingleton("schedule", { start: e.target.value, end: schedule.end })
                 }
               />
               <span className="text-muted-foreground">–</span>
+              <label htmlFor="schedule-end" className="sr-only">
+                Hora de fin
+              </label>
               <Input
+                id="schedule-end"
+                name="schedule-end"
                 type="time"
-                aria-label="Hora de fin"
                 value={schedule.end}
-                className="w-28"
+                className={timeInputClass}
                 onChange={(e) =>
                   setSingleton("schedule", { start: schedule.start, end: e.target.value })
                 }
@@ -328,6 +344,7 @@ function ListEditor({
 }) {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const inputId = useId();
 
   async function handleAdd() {
     const err = await onAdd(input);
@@ -347,8 +364,13 @@ function ListEditor({
       description={description}
       action={<Badge variant="outline">{items.length}</Badge>}
     >
+      <label htmlFor={inputId} className="sr-only">
+        {`Agregar a ${title}`}
+      </label>
       <div className="flex gap-2">
         <Input
+          id={inputId}
+          name={`add-${title.toLowerCase().replace(/\s+/g, "-")}`}
           value={input}
           placeholder={placeholder}
           onChange={(e) => setInput(e.target.value)}

@@ -1,10 +1,10 @@
 # SPEC: Regla de negocio — Detección de silencio inicial (corte a los 5 segundos)
 
 - nombre: Corte por silencio inicial del emisor
-- autor: @noe
+- autor: @noecortez
 - fecha: 2026-07-04
 - estado: borrador
-- fuente: Flujo de producto definido por @noe — nodo K del flowchart ("¿El emisor comunica algo en los primeros 5 segundos?")
+- fuente: Flujo de producto definido por @noecortez — nodo K del flowchart ("¿El emisor comunica algo en los primeros 5 segundos?")
 
 ## Descripción
 Una vez que el agente de IA contesta la llamada y emite su saludo, si el emisor **no comunica
@@ -46,3 +46,9 @@ comportamiento típico de marcadores automáticos de spam.
 ## Notas técnicas
 - Implementación preferente: configuración nativa del agente ElevenLabs (timeout de inactividad
   de primer turno). Evitar implementar VAD propio en n8n — no está en el camino del audio.
+
+## Estado de implementación (2026-07-04)
+El runtime real es configuración de ElevenLabs (pendiente de integración). El desenlace
+(`silent_hangup` / `caller_hangup` / continuar) se modeló como **función pura**
+(`src/lib/rules/silence.ts`) para demostrar el escenario en el simulador sin integración.
+Tests: `tests/rules/silence.test.ts`.

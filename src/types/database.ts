@@ -27,6 +27,22 @@ export type DbCallSummary = {
   updated_at: string;
 };
 
+export type DbAnsweringRule = {
+  id: string;
+  user_id: string;
+  rule_type:
+    | "whitelist"
+    | "blacklist"
+    | "schedule"
+    | "anonymous"
+    | "prefix_block"
+    | "reject_action";
+  value: Record<string, string>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -79,6 +95,25 @@ export type Database = {
           title?: string;
           summary?: string;
           transcript?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      answering_rules: {
+        Row: DbAnsweringRule;
+        Insert: {
+          id?: string;
+          user_id: string;
+          rule_type: DbAnsweringRule["rule_type"];
+          value: Record<string, string>;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          rule_type?: DbAnsweringRule["rule_type"];
+          value?: Record<string, string>;
+          is_active?: boolean;
           updated_at?: string;
         };
         Relationships: [];

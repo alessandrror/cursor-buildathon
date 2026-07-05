@@ -4,6 +4,8 @@ export const routes = {
   signUp: "/sign-up",
   dashboard: "/dashboard",
   settings: "/settings",
+  rules: "/dashboard/rules",
+  rulesSimulator: "/dashboard/rules/simulator",
   summaryDetail: (id: string) => `/dashboard/summaries/${id}`,
 } as const;
 

@@ -1,7 +1,7 @@
 # SPEC: Configuración de reglas de contestación
 
 - user_story: US-003
-- autor: @noe
+- autor: @noecortez
 - fecha: 2026-07-04
 - estado: borrador
 
@@ -9,7 +9,7 @@
 Permite al usuario definir, desde el dashboard, las reglas que determinan qué llamadas entrantes
 serán atendidas por el agente de IA y cuáles serán rechazadas. Las reglas se guardan en Supabase
 y son evaluadas en tiempo real por n8n en cada llamada (ver
-`reglas/evaluacion-reglas-llamada-entrante.md`).
+`rules/evaluacion-reglas-llamada-entrante.md`).
 
 ## Comportamiento esperado
 - El usuario ve una pantalla "Reglas de contestación" con:
@@ -38,8 +38,8 @@ y son evaluadas en tiempo real por n8n en cada llamada (ver
 - [ ] Desactivar una regla la excluye de la evaluación sin eliminar el registro.
 
 ## Dependencias
-- Tabla `answering_rules` (ver `datos/modelo-datos-core.md`).
-- Regla de negocio `reglas/evaluacion-reglas-llamada-entrante.md` (consumidor de esta configuración).
+- Tabla `answering_rules` (ver `data/modelo-datos-core.md`).
+- Regla de negocio `rules/evaluacion-reglas-llamada-entrante.md` (consumidor de esta configuración).
 - Librería de normalización E.164 en frontend (`libphonenumber-js`).
 
 ## Fuera de alcance
@@ -48,5 +48,17 @@ y son evaluadas en tiempo real por n8n en cada llamada (ver
 - Desvío al número real del usuario.
 
 ## Notas técnicas
-- UI con PrimeVue Unstyled + Tailwind, siguiendo el design system existente del equipo.
+- UI con **React 19 + shadcn/ui + Tailwind v4**, siguiendo el design system del equipo
+  (control de cambios: la spec original decía PrimeVue/Vue; el proyecto real usa React/shadcn).
 - Escrituras vía `supabase-js` directo con RLS (no pasa por n8n): son datos del propio usuario.
+- Autenticación con **Clerk** (no Supabase Auth): `answering_rules.user_id` es `text` y RLS usa
+  `auth.jwt()->>'sub'`, consistente con `001_initial_schema.sql`.
+- La "Acción de rechazo" global se modela como una regla singleton `reject_action`.
+
+## Estado de implementación (2026-07-04)
+- ✅ Implementado: UI de configuración (`/dashboard/rules`), normalización E.164
+  (`libphonenumber-js`), persistencia con RLS (`supabase/migrations/003_answering_rules.sql`),
+  defaults al primer uso, activar/desactivar y validación de conflicto whitelist/blacklist.
+- ✅ Degradación elegante: "modo demo" en memoria cuando Supabase no está configurado.
+- 🔗 Ver simulador de escenarios en `/dashboard/rules/simulator`.
+- Código: `src/lib/rules/*`, `src/hooks/use-answering-rules.ts`, `src/components/rules/*`.

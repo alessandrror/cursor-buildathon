@@ -1,10 +1,10 @@
 # SPEC: Regla de negocio — Evaluación de reglas en llamada entrante
 
 - nombre: Evaluación de reglas de contestación
-- autor: @noe
+- autor: @noecortez
 - fecha: 2026-07-04
 - estado: borrador
-- fuente: Flujo de producto definido por @noe (diagrama de flujo del proyecto) — nodo E del flowchart
+- fuente: Flujo de producto definido por @noecortez (diagrama de flujo del proyecto) — nodo E del flowchart
 
 ## Descripción
 Decide, para cada llamada entrante al número Twilio del usuario, si la llamada debe ser
@@ -57,5 +57,12 @@ el bloqueo).
 ## Criterios de aceptación
 - [ ] Cada decisión queda registrada en la fila de `calls` con `matched_rule` y `decision`.
 - [ ] El P95 de tiempo de evaluación es < 2 s (medible en logs de n8n).
-- [ ] El caso de horario nocturno que cruza medianoche tiene test explícito.
-- [ ] El fail-closed tiene test simulando caída de Supabase.
+- [x] El caso de horario nocturno que cruza medianoche tiene test explícito.
+- [x] El fail-closed tiene test simulando caída de Supabase (rules === null).
+
+## Estado de implementación (2026-07-04)
+La lógica de decisión se implementó como **función pura de TypeScript** reutilizable y testeable
+(`src/lib/rules/evaluate.ts`), independiente de n8n. El runtime en n8n (webhook → TwiML) queda
+pendiente de la integración; mientras tanto, el **simulador** (`/dashboard/rules/simulator`)
+demuestra los 6 casos de precedencia y el fail-closed. Tests: `tests/rules/evaluate.test.ts`,
+`tests/rules/schedule.test.ts` (26 casos, todos verdes).

@@ -140,3 +140,12 @@ Bitácora técnica (sin RLS de usuario; solo service_role y equipo).
 ## Reglas de integridad
 - RLS: `SELECT/INSERT/UPDATE` con `auth.uid() = user_id` en profiles, answering_rules, calls, call_summaries, call_transcripts (join vía calls), notifications. Escritura de calls/transcripts/summaries: solo service_role.
 - `duration_seconds >= 0`; enums con CHECK/tipo enum nativo; E.164 con CHECK regex `^\+[1-9][0-9]{6,14}$`.
+
+## Estado de implementación (2026-07-04)
+- ✅ `answering_rules` implementada en `supabase/migrations/003_answering_rules.sql`.
+  Control de cambios respecto a este modelo: el proyecto usa **Clerk** (no Supabase Auth), por lo
+  que `user_id` es `text` (FK → `public.users`) y RLS usa `auth.jwt()->>'sub'`. Se añadió el
+  `rule_type` singleton **`reject_action`** para la "Acción de rechazo" global. Incluye CHECK E.164,
+  trigger anti-conflicto whitelist/blacklist y `updated_at`.
+- Las tablas `profiles`, `phone_numbers`, `calls`, `call_transcripts`, `notifications`,
+  `system_events` siguen pendientes (el schema actual usa `users` + `call_summaries`).

@@ -44,40 +44,46 @@ create index if not exists call_summaries_started_at_idx
 alter table public.users enable row level security;
 alter table public.call_summaries enable row level security;
 
-create policy "Users can view their own profile"
-  on public.users
-  for select
-  to authenticated
-  using ((select auth.jwt() ->> 'sub') = id);
+do $$ begin
+  create policy "Users can view their own profile"
+    on public.users for select to authenticated
+    using ((select auth.jwt() ->> 'sub') = id);
+exception when duplicate_object then null;
+end $$;
 
-create policy "Users can update their own profile"
-  on public.users
-  for update
-  to authenticated
-  using ((select auth.jwt() ->> 'sub') = id)
-  with check ((select auth.jwt() ->> 'sub') = id);
+do $$ begin
+  create policy "Users can update their own profile"
+    on public.users for update to authenticated
+    using ((select auth.jwt() ->> 'sub') = id)
+    with check ((select auth.jwt() ->> 'sub') = id);
+exception when duplicate_object then null;
+end $$;
 
-create policy "Users can view their own call summaries"
-  on public.call_summaries
-  for select
-  to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can view their own call summaries"
+    on public.call_summaries for select to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
-create policy "Users can insert their own call summaries"
-  on public.call_summaries
-  for insert
-  to authenticated
-  with check ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can insert their own call summaries"
+    on public.call_summaries for insert to authenticated
+    with check ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
-create policy "Users can update their own call summaries"
-  on public.call_summaries
-  for update
-  to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id)
-  with check ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can update their own call summaries"
+    on public.call_summaries for update to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id)
+    with check ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
-create policy "Users can delete their own call summaries"
-  on public.call_summaries
-  for delete
-  to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can delete their own call summaries"
+    on public.call_summaries for delete to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;

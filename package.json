@@ -11,7 +11,8 @@
     "env:setup": "cp .env.example .env.local",
     "clerk:login": "bunx clerk auth login",
     "clerk:init": "bunx clerk init --app app_3G3kypE1PlLZ2ATrTEnhXONzf1U",
-    "clerk:doctor": "bunx clerk doctor"
+    "clerk:doctor": "bunx clerk doctor",
+    "db:migrate": "supabase db push"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",

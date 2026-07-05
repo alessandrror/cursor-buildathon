@@ -12,9 +12,16 @@ export async function POST(request: NextRequest) {
 
     switch (event.type) {
       case "user.created":
-      case "user.updated":
-        await upsertUserFromClerk(event.data);
+      case "user.updated": {
+        const result = await upsertUserFromClerk(event.data);
+
+        if (!result.ok) {
+          console.error("[clerk webhook] user sync failed:", result.error);
+          return Response.json({ error: result.error }, { status: 500 });
+        }
+
         break;
+      }
       case "user.deleted":
         if (event.data.id) {
           await deleteUserFromClerk(event.data.id);

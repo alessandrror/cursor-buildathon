@@ -1,12 +1,19 @@
 import type { User, UserJSON } from "@clerk/nextjs/server";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
+import {
+  isSupabaseAdminConfigured,
+  isSupabaseConfigured,
+} from "@/lib/supabase/env";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
 
 type ClerkUserLike = Pick<User, "id" | "firstName" | "lastName" | "imageUrl"> & {
   emailAddresses?: User["emailAddresses"];
   primaryEmailAddressId?: User["primaryEmailAddressId"];
 };
+
+type UserInsert = Database["public"]["Tables"]["users"]["Insert"];
 
 function getPrimaryEmail(user: ClerkUserLike | UserJSON) {
   if ("email_addresses" in user) {
@@ -26,7 +33,7 @@ function getPrimaryEmail(user: ClerkUserLike | UserJSON) {
   return primary?.emailAddress ?? null;
 }
 
-function mapClerkUserToRow(user: ClerkUserLike | UserJSON) {
+function mapClerkUserToRow(user: ClerkUserLike | UserJSON): UserInsert {
   if ("first_name" in user) {
     return {
       id: user.id,
@@ -48,28 +55,59 @@ function mapClerkUserToRow(user: ClerkUserLike | UserJSON) {
   };
 }
 
+async function upsertWithAdminClient(row: UserInsert) {
+  const supabase = createAdminSupabaseClient();
+
+  return supabase.from("users").upsert(row, {
+    onConflict: "id",
+  });
+}
+
+async function upsertWithAuthenticatedClient(row: UserInsert) {
+  const supabase = await createServerSupabaseClient();
+
+  return supabase.from("users").upsert(row, {
+    onConflict: "id",
+  });
+}
+
 export async function upsertUserFromClerk(user: ClerkUserLike | UserJSON) {
   if (!isSupabaseConfigured()) {
     return { ok: false as const, error: "Supabase is not configured" };
   }
 
-  const supabase = createAdminSupabaseClient();
   const row = mapClerkUserToRow(user);
+  const errors: string[] = [];
 
-  const { error } = await supabase.from("users").upsert(row, {
-    onConflict: "id",
-  });
+  if (isSupabaseAdminConfigured()) {
+    const { error } = await upsertWithAdminClient(row);
 
-  if (error) {
-    return { ok: false as const, error: error.message };
+    if (!error) {
+      return { ok: true as const };
+    }
+
+    errors.push(`admin: ${error.message}`);
+  } else {
+    errors.push("admin: SUPABASE_SERVICE_ROLE_KEY is missing");
   }
 
-  return { ok: true as const };
+  const { error: authError } = await upsertWithAuthenticatedClient(row);
+
+  if (!authError) {
+    return { ok: true as const };
+  }
+
+  errors.push(`authenticated: ${authError.message}`);
+
+  return {
+    ok: false as const,
+    error: errors.join(" | "),
+  };
 }
 
 export async function deleteUserFromClerk(userId: string) {
-  if (!isSupabaseConfigured()) {
-    return { ok: false as const, error: "Supabase is not configured" };
+  if (!isSupabaseAdminConfigured()) {
+    return { ok: false as const, error: "Supabase admin is not configured" };
   }
 
   const supabase = createAdminSupabaseClient();

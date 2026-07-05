@@ -1,0 +1,222 @@
+<!-- @dsCard group="App" viewport="900x680" name="GhostLine App" subtitle="Home de protección · click-through" -->
+<!-- @startingPoint section="App" subtitle="Pantalla de protección de la app GhostLine" viewport="900x680" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GhostLine — App</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: {
+    colors: {
+      background:'#FBFAF5', foreground:'#14261F',
+      card:{DEFAULT:'#FFFFFF',foreground:'#14261F'},
+      pine:'#1E4D3B', forest:'#14261F', sage:'#8FB09B', sage100:'#E5EDE7', sand:'#E8C98E', bone:'#F5F3EC',
+      primary:{DEFAULT:'#1E4D3B',foreground:'#F5F3EC'},
+      secondary:{DEFAULT:'#E5EDE7',foreground:'#1E4D3B'},
+      muted:{DEFAULT:'#F1EFE7',foreground:'#6F7A72'},
+      accent:{DEFAULT:'#E8C98E',foreground:'#14261F'},
+      destructive:{DEFAULT:'#C0503B',foreground:'#FFFFFF'},
+      success:{DEFAULT:'#2F7D57',foreground:'#FFFFFF'},
+      warning:{DEFAULT:'#C68A2E',foreground:'#14261F'},
+      border:'#E7E4DA', input:'#E7E4DA', ring:'#8FB09B'
+    },
+    borderRadius:{ xl:'1.25rem', lg:'1rem', md:'calc(1rem - 2px)' },
+    fontFamily:{ sans:['Hanken Grotesk','sans-serif'], display:['Schibsted Grotesk','sans-serif'] }
+  }}}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;900&family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital@1&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body{font-family:'Hanken Grotesk',sans-serif}
+  .font-display{font-family:'Schibsted Grotesk',sans-serif;letter-spacing:-.02em}
+  .serif-i{font-family:'Newsreader',serif;font-style:italic}
+  .tabbtn[data-active="true"]{color:#1E4D3B}
+  .tabbtn[data-active="true"] .ic{background:#E5EDE7}
+</style>
+</head>
+<body class="bg-[#EDEBE6] min-h-screen flex items-center justify-center p-8">
+
+  <div class="flex items-start gap-10 flex-wrap justify-center">
+
+    <!-- PHONE — APP -->
+    <div class="w-[380px] h-[760px] rounded-[42px] bg-forest p-3 shadow-[0_40px_90px_-40px_rgba(20,45,35,.7)] shrink-0">
+      <div class="relative w-full h-full rounded-[32px] bg-background overflow-hidden flex flex-col">
+
+        <div class="flex justify-between items-center px-6 pt-4 pb-1 text-xs font-semibold text-foreground/70">
+          <span>9:41</span>
+          <span class="flex gap-1.5 items-center"><i data-lucide="signal" class="w-3.5 h-3.5"></i><i data-lucide="wifi" class="w-3.5 h-3.5"></i><i data-lucide="battery-full" class="w-4 h-4"></i></span>
+        </div>
+
+        <div class="px-6 pt-2 pb-3 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <svg viewBox="0 0 120 120" class="w-8 h-8"><path d="M28 58 a32 32 0 0 1 64 0 V90 c0 4 -4 6 -7 3 l-6 -5 c-2 -2 -5 -2 -7 0 l-5 5 c-2 2 -5 2 -7 0 l-5 -5 c-2 -2 -5 -2 -7 0 l-6 5 c-3 3 -7 1 -7 -3 Z" fill="#1E4D3B"/><circle cx="50" cy="56" r="5" fill="#F5F3EC"/><circle cx="70" cy="56" r="5" fill="#F5F3EC"/></svg>
+            <span class="font-display text-xl font-black text-forest">Ghost<span class="font-normal text-sage">Line</span></span>
+          </div>
+          <button class="size-9 rounded-full bg-sage100 flex items-center justify-center text-pine"><i data-lucide="user" class="w-5 h-5"></i></button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-6 pb-28" id="scroll">
+
+          <!-- HOME -->
+          <section data-tab="home">
+            <div class="rounded-xl bg-pine text-bone p-6 mt-1 relative overflow-hidden">
+              <div class="absolute -right-6 -top-8 opacity-[.12]">
+                <svg viewBox="0 0 120 120" class="w-40 h-40"><path d="M28 58 a32 32 0 0 1 64 0 V90 c0 4 -4 6 -7 3 l-6 -5 c-2 -2 -5 -2 -7 0 l-5 5 c-2 2 -5 2 -7 0 l-5 -5 c-2 -2 -5 -2 -7 0 l-6 5 c-3 3 -7 1 -7 -3 Z" fill="#F5F3EC"/></svg>
+              </div>
+              <div class="relative">
+                <div class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+                  <span class="size-1.5 rounded-full bg-sage"></span> Protección activa
+                </div>
+                <div class="font-display text-3xl font-black mt-4 leading-tight">Estás protegido</div>
+                <p class="serif-i text-sage/90 text-lg mt-1">calma natural que protege sin alarmar</p>
+                <div class="flex gap-6 mt-5">
+                  <div><div class="text-2xl font-display font-black">37</div><div class="text-xs text-bone/70">bloqueadas este mes</div></div>
+                  <div class="w-px bg-white/15"></div>
+                  <div><div class="text-2xl font-display font-black">4.2h</div><div class="text-xs text-bone/70">tiempo ahorrado</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-4">
+              <div class="rounded-lg bg-card border border-border p-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-semibold">Auto-bloqueo</span>
+                  <button onclick="tog(this)" data-on="true" class="tgl inline-flex h-6 w-11 items-center rounded-full bg-primary px-0.5 transition-colors">
+                    <span class="knob size-5 rounded-full bg-white shadow-sm translate-x-5 block transition-transform"></span>
+                  </button>
+                </div>
+                <p class="text-xs text-muted-foreground mt-2">Estafas conocidas se cuelgan solas.</p>
+              </div>
+              <div class="rounded-lg bg-card border border-border p-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-semibold">Silenciar desconocidos</span>
+                  <button onclick="tog(this)" data-on="false" class="tgl inline-flex h-6 w-11 items-center rounded-full bg-input px-0.5 transition-colors">
+                    <span class="knob size-5 rounded-full bg-white shadow-sm block transition-transform"></span>
+                  </button>
+                </div>
+                <p class="text-xs text-muted-foreground mt-2">Van directo al buzón.</p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-6 mb-2">
+              <h2 class="font-display text-lg font-bold">Actividad reciente</h2>
+              <button onclick="go('activity')" class="text-sm font-semibold text-pine">Ver todo</button>
+            </div>
+            <div class="flex flex-col gap-2.5" id="recentList"></div>
+          </section>
+
+          <!-- ACTIVITY -->
+          <section data-tab="activity" class="hidden">
+            <h2 class="font-display text-2xl font-black mt-2 mb-1">Actividad</h2>
+            <p class="text-sm text-muted-foreground mb-4">Todo lo que GhostLine gestionó por ti.</p>
+            <div class="flex gap-2 mb-4">
+              <button class="chip rounded-full bg-pine text-bone px-3.5 py-1.5 text-xs font-semibold">Todas</button>
+              <button class="chip rounded-full bg-secondary text-secondary-foreground px-3.5 py-1.5 text-xs font-semibold">Bloqueadas</button>
+              <button class="chip rounded-full bg-secondary text-secondary-foreground px-3.5 py-1.5 text-xs font-semibold">Seguras</button>
+            </div>
+            <div class="flex flex-col gap-2.5" id="fullList"></div>
+          </section>
+
+          <!-- SETTINGS -->
+          <section data-tab="settings" class="hidden">
+            <h2 class="font-display text-2xl font-black mt-2 mb-4">Ajustes</h2>
+            <div class="rounded-lg bg-card border border-border divide-y divide-border overflow-hidden">
+              <div class="flex items-center justify-between p-4"><span class="text-sm font-semibold">Nivel de protección</span><span class="text-sm text-muted-foreground flex items-center gap-1">Alto <i data-lucide="chevron-right" class="w-4 h-4"></i></span></div>
+              <div class="flex items-center justify-between p-4"><span class="text-sm font-semibold">Lista de permitidos</span><span class="text-sm text-muted-foreground flex items-center gap-1">12 <i data-lucide="chevron-right" class="w-4 h-4"></i></span></div>
+              <div class="flex items-center justify-between p-4"><span class="text-sm font-semibold">Reportar un número</span><i data-lucide="chevron-right" class="w-4 h-4 text-muted-foreground"></i></div>
+              <div class="flex items-center justify-between p-4"><span class="text-sm font-semibold">Notificaciones</span>
+                <button onclick="tog(this)" data-on="true" class="tgl inline-flex h-6 w-11 items-center rounded-full bg-primary px-0.5"><span class="knob size-5 rounded-full bg-white shadow-sm translate-x-5 block transition-transform"></span></button>
+              </div>
+            </div>
+            <div class="rounded-lg bg-sand/40 border border-sand p-4 mt-4">
+              <div class="font-semibold text-sm text-forest">Tu comunidad protege</div>
+              <p class="text-xs text-forest/70 mt-1">Cada número que reportas ayuda a proteger a otras 8.400 personas en la red GhostLine.</p>
+            </div>
+          </section>
+
+        </div>
+
+        <div class="absolute bottom-0 inset-x-0 bg-card/95 backdrop-blur border-t border-border px-8 py-3 flex justify-between">
+          <button onclick="go('home')" data-active="true" class="tabbtn nav flex flex-col items-center gap-1 text-muted-foreground" data-nav="home">
+            <span class="ic size-8 rounded-full flex items-center justify-center"><i data-lucide="shield-check" class="w-5 h-5"></i></span><span class="text-[10px] font-semibold">Inicio</span>
+          </button>
+          <button onclick="go('activity')" data-active="false" class="tabbtn nav flex flex-col items-center gap-1 text-muted-foreground" data-nav="activity">
+            <span class="ic size-8 rounded-full flex items-center justify-center"><i data-lucide="activity" class="w-5 h-5"></i></span><span class="text-[10px] font-semibold">Actividad</span>
+          </button>
+          <button onclick="go('settings')" data-active="false" class="tabbtn nav flex flex-col items-center gap-1 text-muted-foreground" data-nav="settings">
+            <span class="ic size-8 rounded-full flex items-center justify-center"><i data-lucide="settings" class="w-5 h-5"></i></span><span class="text-[10px] font-semibold">Ajustes</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHONE — INCOMING CALL -->
+    <div class="w-[380px] h-[760px] rounded-[42px] bg-forest p-3 shadow-[0_40px_90px_-40px_rgba(20,45,35,.7)] shrink-0">
+      <div class="relative w-full h-full rounded-[32px] bg-pine overflow-hidden flex flex-col items-center text-bone">
+        <div class="absolute inset-0 opacity-[.08] flex items-center justify-center">
+          <svg viewBox="0 0 120 120" class="w-[120%] h-[120%]"><path d="M28 58 a32 32 0 0 1 64 0 V90 c0 4 -4 6 -7 3 l-6 -5 c-2 -2 -5 -2 -7 0 l-5 5 c-2 2 -5 2 -7 0 l-5 -5 c-2 -2 -5 -2 -7 0 l-6 5 c-3 3 -7 1 -7 -3 Z" fill="#F5F3EC"/></svg>
+        </div>
+        <div class="relative flex flex-col items-center pt-24 px-8 text-center">
+          <div class="inline-flex items-center gap-2 rounded-full bg-destructive px-3.5 py-1.5 text-xs font-semibold text-white">
+            <i data-lucide="triangle-alert" class="w-3.5 h-3.5"></i> Estafa detectada
+          </div>
+          <div class="size-28 rounded-full bg-white/12 flex items-center justify-center mt-8">
+            <svg viewBox="0 0 120 120" class="w-16 h-16"><path d="M28 58 a32 32 0 0 1 64 0 V90 c0 4 -4 6 -7 3 l-6 -5 c-2 -2 -5 -2 -7 0 l-5 5 c-2 2 -5 2 -7 0 l-5 -5 c-2 -2 -5 -2 -7 0 l-6 5 c-3 3 -7 1 -7 -3 Z" fill="#F5F3EC"/><circle cx="50" cy="56" r="5" fill="#1E4D3B"/><circle cx="70" cy="56" r="5" fill="#1E4D3B"/></svg>
+          </div>
+          <div class="font-display text-3xl font-black mt-6">+503 2555 0142</div>
+          <p class="text-bone/80 mt-2">Reportado 214 veces como estafa de banco.</p>
+          <p class="serif-i text-sage text-lg mt-6">GhostLine puede colgar por ti.</p>
+        </div>
+        <div class="mt-auto w-full px-8 pb-14 flex flex-col gap-3">
+          <button class="w-full h-14 rounded-full bg-destructive text-white font-semibold text-base flex items-center justify-center gap-2"><i data-lucide="phone-off" class="w-5 h-5"></i> Colgar y bloquear</button>
+          <button class="w-full h-14 rounded-full bg-white/12 text-bone font-semibold text-base">Contestar de todos modos</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  const blocked = [
+    {t:'+503 2555 0142', s:'Estafa de banco', tag:'Bloqueado', tone:'destructive', time:'9:32', ic:'phone-off'},
+    {t:'Número desconocido', s:'Robollamada', tag:'Bloqueado', tone:'destructive', time:'8:10', ic:'phone-off'},
+    {t:'Farmacia San José', s:'Contacto verificado', tag:'Seguro', tone:'success', time:'Ayer', ic:'phone'},
+    {t:'+1 809 555 7788', s:'Posible estafa', tag:'Sospechoso', tone:'warning', time:'Ayer', ic:'phone-incoming'},
+    {t:'Ana Morales', s:'En tu lista de permitidos', tag:'Seguro', tone:'success', time:'Lun', ic:'phone'},
+  ];
+  const toneMap = {destructive:'bg-destructive text-destructive-foreground', success:'bg-success text-success-foreground', warning:'bg-warning text-warning-foreground'};
+  const dot = {destructive:'#C0503B', success:'#2F7D57', warning:'#C68A2E'};
+  function row(c){
+    return `<div class="flex items-center gap-3 rounded-lg bg-card border border-border p-3.5">
+      <span class="size-10 rounded-full flex items-center justify-center shrink-0" style="background:${dot[c.tone]}1a;color:${dot[c.tone]}"><i data-lucide="${c.ic}" class="w-5 h-5"></i></span>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-semibold truncate">${c.t}</div>
+        <div class="text-xs text-muted-foreground truncate">${c.s}</div>
+      </div>
+      <div class="flex flex-col items-end gap-1 shrink-0">
+        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${toneMap[c.tone]}">${c.tag}</span>
+        <span class="text-[10px] text-muted-foreground">${c.time}</span>
+      </div>
+    </div>`;
+  }
+  document.getElementById('recentList').innerHTML = blocked.slice(0,3).map(row).join('');
+  document.getElementById('fullList').innerHTML = blocked.map(row).join('');
+
+  function go(tab){
+    document.querySelectorAll('[data-tab]').forEach(s=>s.classList.toggle('hidden', s.dataset.tab!==tab));
+    document.querySelectorAll('.nav').forEach(b=>b.dataset.active = (b.dataset.nav===tab));
+    document.getElementById('scroll').scrollTop = 0;
+  }
+  function tog(btn){
+    const on = btn.dataset.on === 'true';
+    btn.dataset.on = String(!on);
+    btn.classList.toggle('bg-primary', !on);
+    btn.classList.toggle('bg-input', on);
+    btn.querySelector('.knob').classList.toggle('translate-x-5', !on);
+  }
+  lucide.createIcons();
+</script>
+</body></html>

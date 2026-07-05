@@ -1,0 +1,51 @@
+/* GhostLine — Color tokens
+   Direction: "Guardián Sereno" (1b) — calm natural protection.
+   Base palette + semantic aliases. */
+:root {
+  /* ---- Brand base ---- */
+  --gl-pine:      #1E4D3B;  /* primary — Pino */
+  --gl-pine-600:  #1A4534;  /* hover */
+  --gl-pine-700:  #163A2C;  /* pressed */
+  --gl-forest:    #14261F;  /* deepest — Bosque */
+
+  --gl-sage:      #8FB09B;  /* secondary — Salvia */
+  --gl-sage-300:  #B4CCBD;
+  --gl-sage-100:  #E5EDE7;  /* tint surface */
+
+  --gl-sand:      #E8C98E;  /* accent — Arena */
+  --gl-sand-600:  #D8B26A;
+  --gl-sand-100:  #F6E9CE;
+
+  --gl-bone:      #F5F3EC;  /* light surface — Hueso */
+  --gl-paper:     #FBFAF5;  /* app background */
+  --gl-white:     #FFFFFF;
+  --gl-ink:       #14261F;  /* text ink */
+
+  /* ---- Semantic status ---- */
+  --gl-danger:    #C0503B;  /* scam / blocked */
+  --gl-danger-bg: #F7E3DD;
+  --gl-success:   #2F7D57;  /* safe / verified */
+  --gl-success-bg:#DCEEE3;
+  --gl-warning:   #C68A2E;  /* suspicious */
+  --gl-warning-bg:#F6E9CE;
+
+  /* ---- Semantic aliases ---- */
+  --surface-app:     var(--gl-paper);
+  --surface-card:    var(--gl-white);
+  --surface-inset:   var(--gl-bone);
+  --surface-tint:    var(--gl-sage-100);
+  --surface-brand:   var(--gl-pine);
+  --surface-brand-deep: var(--gl-forest);
+
+  --text-strong:   var(--gl-ink);
+  --text-body:     #3A473F;
+  --text-muted:    #6F7A72;
+  --text-on-brand: var(--gl-bone);
+  --text-on-accent:var(--gl-forest);
+
+  --border-subtle: #E7E4DA;
+  --border-strong: #CBD3CB;
+
+  --accent:        var(--gl-sand);
+  --focus-ring:    var(--gl-sage);
+}

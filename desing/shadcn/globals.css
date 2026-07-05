@@ -1,0 +1,180 @@
+/* ============================================================
+   GhostLine — shadcn/ui theme for Tailwind v4
+   Drop-in replacement for your app's globals.css.
+   Direction: "Guardián Sereno" — calm, natural, trustworthy.
+   ============================================================ */
+@import "tailwindcss";
+
+/* Enables the `dark:` variant when a .dark class is on an ancestor */
+@custom-variant dark (&:is(.dark *));
+
+/* Fonts (swap for self-hosted @font-face if you license them) */
+@import url("https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;900&family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap");
+
+/* Map shadcn CSS variables into Tailwind's theme so utilities like
+   bg-primary, text-muted-foreground, rounded-lg, font-display resolve. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Schibsted Grotesk", ui-sans-serif, sans-serif;
+  --font-serif: "Newsreader", Georgia, serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ---------------- Light theme (default) ---------------- */
+:root {
+  --radius: 1rem; /* soft, friendly corners */
+
+  --background: #FBFAF5;   /* Paper */
+  --foreground: #14261F;   /* Tinta */
+
+  --card: #FFFFFF;
+  --card-foreground: #14261F;
+  --popover: #FFFFFF;
+  --popover-foreground: #14261F;
+
+  --primary: #1E4D3B;              /* Pino */
+  --primary-foreground: #F5F3EC;   /* Hueso */
+
+  --secondary: #E5EDE7;            /* Salvia 100 */
+  --secondary-foreground: #1E4D3B;
+
+  --muted: #F1EFE7;
+  --muted-foreground: #6F7A72;
+
+  --accent: #E8C98E;               /* Arena */
+  --accent-foreground: #14261F;
+
+  --destructive: #C0503B;          /* Bloqueado / estafa */
+  --destructive-foreground: #FFFFFF;
+
+  --success: #2F7D57;              /* Seguro / verificado */
+  --success-foreground: #FFFFFF;
+  --warning: #C68A2E;              /* Sospechoso */
+  --warning-foreground: #14261F;
+
+  --border: #E7E4DA;
+  --input: #E7E4DA;
+  --ring: #8FB09B;                 /* Salvia */
+
+  --chart-1: #1E4D3B;
+  --chart-2: #8FB09B;
+  --chart-3: #E8C98E;
+  --chart-4: #C0503B;
+  --chart-5: #6F7A72;
+
+  --sidebar: #F5F3EC;
+  --sidebar-foreground: #14261F;
+  --sidebar-primary: #1E4D3B;
+  --sidebar-primary-foreground: #F5F3EC;
+  --sidebar-accent: #E5EDE7;
+  --sidebar-accent-foreground: #1E4D3B;
+  --sidebar-border: #E7E4DA;
+  --sidebar-ring: #8FB09B;
+}
+
+/* ---------------- Dark theme ---------------- */
+.dark {
+  --background: #12241C;   /* deep forest */
+  --foreground: #ECF1ED;
+
+  --card: #183226;
+  --card-foreground: #ECF1ED;
+  --popover: #183226;
+  --popover-foreground: #ECF1ED;
+
+  --primary: #8FB09B;              /* Salvia carries in the dark */
+  --primary-foreground: #12241C;
+
+  --secondary: #23402F;
+  --secondary-foreground: #E5EDE7;
+
+  --muted: #1E3A2B;
+  --muted-foreground: #9DB0A4;
+
+  --accent: #E8C98E;
+  --accent-foreground: #14261F;
+
+  --destructive: #E27A66;
+  --destructive-foreground: #2A120C;
+
+  --success: #6FBE90;
+  --success-foreground: #0E2117;
+  --warning: #E0B155;
+  --warning-foreground: #14261F;
+
+  --border: #2A4535;
+  --input: #2A4535;
+  --ring: #8FB09B;
+
+  --chart-1: #8FB09B;
+  --chart-2: #B4CCBD;
+  --chart-3: #E8C98E;
+  --chart-4: #E27A66;
+  --chart-5: #9DB0A4;
+
+  --sidebar: #14281F;
+  --sidebar-foreground: #ECF1ED;
+  --sidebar-primary: #8FB09B;
+  --sidebar-primary-foreground: #12241C;
+  --sidebar-accent: #23402F;
+  --sidebar-accent-foreground: #E5EDE7;
+  --sidebar-border: #2A4535;
+  --sidebar-ring: #8FB09B;
+}
+
+/* Base layer — shadcn defaults */
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+}

@@ -1,0 +1,19 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Status colors" subtitle="Bloqueado, Seguro, Sospechoso" -->
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body{margin:0;font-family:var(--font-body);background:var(--surface-app);padding:20px;}
+  .row{display:flex;gap:14px;}
+  .sw{flex:1;border-radius:var(--radius-lg);padding:14px 16px;}
+  .dot{display:flex;align-items:center;gap:9px;font-weight:var(--fw-semibold);font-size:14px;}
+  .d{width:12px;height:12px;border-radius:50%;}
+  .hex{font-size:12px;margin-top:8px;opacity:.85;}
+</style></head>
+<body>
+  <div class="row">
+    <div class="sw" style="background:var(--gl-danger-bg)"><div class="dot" style="color:var(--gl-danger)"><span class="d" style="background:var(--gl-danger)"></span>Bloqueado / Estafa</div><div class="hex" style="color:var(--gl-danger)">#C0503B · bg #F7E3DD</div></div>
+    <div class="sw" style="background:var(--gl-success-bg)"><div class="dot" style="color:var(--gl-success)"><span class="d" style="background:var(--gl-success)"></span>Seguro / Verificado</div><div class="hex" style="color:var(--gl-success)">#2F7D57 · bg #DCEEE3</div></div>
+    <div class="sw" style="background:var(--gl-warning-bg)"><div class="dot" style="color:var(--gl-warning)"><span class="d" style="background:var(--gl-warning)"></span>Sospechoso</div><div class="hex" style="color:var(--gl-warning)">#C68A2E · bg #F6E9CE</div></div>
+  </div>
+</body></html>

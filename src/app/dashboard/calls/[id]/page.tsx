@@ -1,16 +1,14 @@
 import { notFound } from "next/navigation";
 
-import { CallSummaryView } from "@/components/dashboard/call-summary-view";
+import { CallDetailView } from "@/components/dashboard/call-detail-view";
 import { getCallDetailForDashboard } from "@/lib/calls/data-source";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
-type SummaryDetailPageProps = {
+type CallDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function SummaryDetailPage({
-  params,
-}: SummaryDetailPageProps) {
+export default async function CallDetailPage({ params }: CallDetailPageProps) {
   const { id } = await params;
 
   if (!isSupabaseConfigured()) {
@@ -29,5 +27,5 @@ export default async function SummaryDetailPage({
     notFound();
   }
 
-  return <CallSummaryView call={call} />;
+  return <CallDetailView call={call} />;
 }

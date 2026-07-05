@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, Ban, Flag, UserRoundCheck } from "lucide-react";
+import { ArrowLeft, Ban, Flag, ShieldCheck, UserRoundCheck } from "lucide-react";
 
+import { CallTranscript } from "@/components/dashboard/call-transcript";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,11 +17,11 @@ import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import type { CallDetail } from "@/types/call";
 
-type CallDetailViewProps = {
+type CallSummaryViewProps = {
   call: CallDetail;
 };
 
-function getDetailStatusLabel(call: CallDetail) {
+function getStatusLabel(call: CallDetail) {
   if (call.outcome === "completed") return "Completada";
   if (call.outcome === "pending_summary") return "Pendiente";
   return getOutcomeMeta(call.outcome).label;
@@ -35,43 +36,61 @@ function getCompactDuration(seconds?: number) {
   return remainder > 0 ? `${minutes}m ${remainder}s` : `${minutes}m`;
 }
 
-function getCallMetaLine(call: CallDetail) {
-  const duration = formatDuration(call.durationSeconds);
+function getHeaderTitle(call: CallDetail) {
+  return call.callerCompany ?? call.callerName ?? getCallerShortName(call);
+}
 
+function getHeaderMeta(call: CallDetail) {
   return [
-    call.callerCompany,
+    call.callerNumber,
     formatRelativeTime(call.startedAt),
-    duration,
+    formatDuration(call.durationSeconds),
   ]
     .filter(Boolean)
     .join(" · ");
 }
 
-function getPrimaryReason(call: CallDetail) {
-  const outcome = getOutcomeMeta(call.outcome);
-  return call.reason ?? call.summary ?? outcome.description;
-}
-
-function getSummaryDetail(call: CallDetail) {
-  if (call.reason && call.summary && call.reason !== call.summary) {
-    return call.summary;
+function getConclusion(call: CallDetail) {
+  if (call.category === "posible_legitima") {
+    return {
+      title: "Contacto legítimo, sin riesgo",
+      body:
+        "La llamada corresponde a una gestión real y no hubo intento de fraude. Puedes marcar este número como seguro.",
+    };
   }
 
-  return getOutcomeMeta(call.outcome).description;
+  if (call.outcome === "rejected" || call.category === "spam_comercial") {
+    return {
+      title: "Riesgo detectado",
+      body:
+        "GhostLine encontró señales de llamada no deseada. Mantén este número bloqueado si no reconoces al emisor.",
+    };
+  }
+
+  return {
+    title: "Llamada revisada",
+    body:
+      "GhostLine registró el contexto principal de la conversación para que puedas decidir qué hacer con este número.",
+  };
 }
 
-export function CallDetailView({ call }: CallDetailViewProps) {
+function getSummaryReason(call: CallDetail) {
+  return call.reason ?? call.summary ?? getOutcomeMeta(call.outcome).description;
+}
+
+export function CallSummaryView({ call }: CallSummaryViewProps) {
   const outcome = getOutcomeMeta(call.outcome);
   const OutcomeIcon = outcome.icon;
   const category = call.category ? getCategoryMeta(call.category) : null;
   const urgency = call.urgency ? getUrgencyMeta(call.urgency) : null;
+  const conclusion = getConclusion(call);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
       <Button variant="ghost" size="sm" className="-ml-2 mb-4 text-muted-foreground" asChild>
-        <Link href={routes.dashboard}>
+        <Link href={routes.callDetail(call.id)}>
           <ArrowLeft data-icon="inline-start" />
-          Volver al panel
+          Volver a la llamada
         </Link>
       </Button>
 
@@ -97,53 +116,73 @@ export function CallDetailView({ call }: CallDetailViewProps) {
             </div>
             <div className="min-w-0">
               <h1 className="truncate font-display text-2xl font-black tracking-tight sm:text-3xl">
-                {getCallerShortName(call)}
+                {getHeaderTitle(call)}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                {getCallMetaLine(call)}
+                {getHeaderMeta(call)}
               </p>
             </div>
           </div>
           <Badge variant={outcome.variant} className="self-start sm:self-center">
-            {getDetailStatusLabel(call)}
+            {getStatusLabel(call)}
           </Badge>
         </CardContent>
       </Card>
 
-      <section aria-label="Resumen de la llamada" className="mt-4 grid gap-3 sm:grid-cols-4">
-        <DetailStat label="Estado" value={getDetailStatusLabel(call)} />
-        <DetailStat label="Duración" value={getCompactDuration(call.durationSeconds)} />
-        <DetailStat label="Categoría" value={category?.label ?? "Sin clasificar"} />
-        <DetailStat
+      <Card className="mt-4 gap-0 border-primary/20 bg-secondary/60 py-0 shadow-none">
+        <CardContent className="flex gap-4 px-5 py-5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-success">
+            <ShieldCheck className="size-5" aria-hidden />
+          </div>
+          <div>
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-success">
+              Conclusión
+            </p>
+            <h2 className="mt-1 font-display text-base font-black tracking-tight">
+              {conclusion.title}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {conclusion.body}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 gap-0 py-0 shadow-none">
+        <CardContent className="px-5 py-5">
+          <h2 className="font-display text-xl font-black tracking-tight">Resumen</h2>
+          <p className="mt-4 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            Motivo
+          </p>
+          <h3 className="mt-2 font-display text-base font-black tracking-tight">
+            {getSummaryReason(call)}
+          </h3>
+          <p className="mt-3 text-sm leading-7 text-muted-foreground">
+            {call.summary ?? outcome.description}
+          </p>
+        </CardContent>
+      </Card>
+
+      <section aria-label="Datos de la llamada" className="mt-4 grid gap-3 sm:grid-cols-4">
+        <SummaryStat label="Estado" value={getStatusLabel(call)} />
+        <SummaryStat label="Duración" value={getCompactDuration(call.durationSeconds)} />
+        <SummaryStat label="Categoría" value={category?.label ?? "Sin clasificar"} />
+        <SummaryStat
           label="Urgencia"
           value={urgency?.label.replace("Urgencia ", "") ?? "Sin urgencia"}
         />
       </section>
 
-      <Card className="mt-4 gap-0 py-0 shadow-none">
-        <CardContent className="px-5 py-5">
-          <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Motivo
-          </p>
-          <h2 className="mt-3 font-display text-lg font-black tracking-tight">
-            {getPrimaryReason(call)}
-          </h2>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            {getSummaryDetail(call)}
-          </p>
-          <Button variant="link" className="mt-2 h-auto px-0" asChild>
-            <Link href={routes.summaryDetail(call.id)}>
-              Ver resumen completo
-              <ArrowLeft className="rotate-180" data-icon="inline-end" />
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+      {call.transcript && call.transcript.length > 0 && (
+        <div className="mt-4">
+          <CallTranscript turns={call.transcript} />
+        </div>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <Button variant="outline" className="bg-card">
           <UserRoundCheck data-icon="inline-start" />
-          Confiar
+          Confiar en este número
         </Button>
         <Button variant="destructive">
           <Ban data-icon="inline-start" />
@@ -158,7 +197,7 @@ export function CallDetailView({ call }: CallDetailViewProps) {
   );
 }
 
-function DetailStat({ label, value }: { label: string; value: string }) {
+function SummaryStat({ label, value }: { label: string; value: string }) {
   return (
     <Card className="gap-0 py-0 shadow-none">
       <CardContent className="px-4 py-4">

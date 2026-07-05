@@ -1,8 +1,15 @@
 "use client";
 
+import { MicOff } from "lucide-react";
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { dispatchCallCompletedEvent } from "@/lib/calls/events";
 
 type AgentWidgetProps = {
@@ -12,14 +19,32 @@ type AgentWidgetProps = {
 
 export function AgentWidget({ ownerName, clerkUserId }: AgentWidgetProps) {
   const [agentId, setAgentId] = useState<string | null>(null);
+  const [microphoneStatus, setMicrophoneStatus] = useState<
+    "checking" | "supported" | "unsupported"
+  >("checking");
   const widgetRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const mediaDevices = navigator.mediaDevices as
+        | Partial<MediaDevices>
+        | undefined;
+      const hasGetUserMedia = typeof mediaDevices?.getUserMedia === "function";
+
+      setMicrophoneStatus(hasGetUserMedia ? "supported" : "unsupported");
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (microphoneStatus !== "supported" || !clerkUserId) return;
+
     fetch("/api/agent/signed-url")
       .then((r) => r.json())
       .then((d) => setAgentId(d.agent_id ?? null))
       .catch(console.error);
-  }, []);
+  }, [microphoneStatus, clerkUserId]);
 
   useEffect(() => {
     const widget = widgetRef.current;
@@ -35,6 +60,27 @@ export function AgentWidget({ ownerName, clerkUserId }: AgentWidgetProps) {
       widget.removeEventListener("conversationEnded", onConversationEnded);
     };
   }, [agentId]);
+
+  if (microphoneStatus === "unsupported") {
+    return (
+      <Card className="shadow-none">
+        <CardHeader>
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <MicOff className="size-5" aria-hidden />
+            </div>
+            <div className="flex flex-col gap-1">
+              <CardTitle>Simulador no disponible</CardTitle>
+              <CardDescription>
+                El navegador no expone acceso al micrófono. Abre la app en
+                localhost o en HTTPS y permite el micrófono para probar el agente.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   if (!agentId || !clerkUserId) return null;
 

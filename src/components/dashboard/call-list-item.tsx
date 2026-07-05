@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { Ban, UserRoundCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
-  formatDuration,
   formatRelativeTime,
   getCallerShortName,
   getCategoryMeta,
@@ -22,46 +22,47 @@ type CallListItemCardProps = {
 export function CallListItemCard({ call }: CallListItemCardProps) {
   const outcome = getOutcomeMeta(call.outcome);
   const OutcomeIcon = outcome.icon;
-  const duration = formatDuration(call.durationSeconds);
 
   return (
     <li>
-      <Link href={routes.summaryDetail(call.id)} className="group block">
-        <Card className="gap-0 py-0 shadow-none transition-colors hover:bg-secondary/35">
-          <CardContent className="flex items-start gap-4 px-4 py-4 sm:px-5">
-            <div
-              className={cn(
-                "flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary",
-                call.outcome === "rejected" && "text-destructive",
-                call.outcome === "silent_hangup" && "text-warning",
-                call.outcome === "completed" && "text-success",
-                call.outcome === "pending_summary" && "text-accent-foreground",
-              )}
-            >
-              <OutcomeIcon
+      <Card className="h-full gap-0 py-0 shadow-none transition-colors hover:bg-secondary/25">
+        <CardContent className="flex h-full flex-col px-4 py-4">
+          <Link
+            href={routes.callDetail(call.id)}
+            className="group flex flex-1 flex-col"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div
                 className={cn(
-                  "size-5",
-                  call.outcome === "pending_summary" && "animate-spin",
+                  "flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary",
+                  call.outcome === "rejected" && "text-destructive",
+                  call.outcome === "silent_hangup" && "text-warning",
+                  call.outcome === "completed" && "text-success",
+                  call.outcome === "pending_summary" && "text-accent-foreground",
                 )}
-                aria-hidden
-              />
+              >
+                <OutcomeIcon
+                  className={cn(
+                    "size-5",
+                    call.outcome === "pending_summary" && "animate-spin",
+                  )}
+                  aria-hidden
+                />
+              </div>
+              <Badge variant={outcome.variant} className="shrink-0">
+                {outcome.label}
+              </Badge>
             </div>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{getCallerShortName(call)}</p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {formatRelativeTime(call.startedAt)}
-                    {duration ? ` · ${duration}` : null}
-                  </p>
-                </div>
-                <Badge variant={outcome.variant} className="shrink-0">
-                  {outcome.label}
-                </Badge>
-              </div>
+            <div className="mt-5 min-w-0">
+              <p className="truncate font-display text-lg font-black tracking-tight">
+                {getCallerShortName(call)}
+              </p>
+              <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+                {call.summary ?? outcome.description}
+              </p>
 
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {call.category && (
                   <Badge variant={getCategoryMeta(call.category).variant}>
                     {getCategoryMeta(call.category).label}
@@ -76,25 +77,36 @@ export function CallListItemCard({ call }: CallListItemCardProps) {
                   <Badge variant="outline">Resumen parcial</Badge>
                 )}
               </div>
-
-              {call.summary ? (
-                <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                  {call.summary}
-                </p>
-              ) : (
-                <p className="mt-3 text-sm italic text-muted-foreground">
-                  {outcome.description}
-                </p>
-              )}
             </div>
+          </Link>
 
-            <ChevronRight
-              className="mt-1 size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
-              aria-hidden
-            />
-          </CardContent>
-        </Card>
-      </Link>
+          <div className="mt-5 flex items-center justify-between border-t border-border pt-3">
+            <p className="text-sm text-muted-foreground">
+              {formatRelativeTime(call.startedAt)}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-8 bg-card"
+                aria-label="Marcar como contacto permitido"
+              >
+                <UserRoundCheck aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-8 bg-card text-destructive"
+                aria-label="Bloquear este número"
+              >
+                <Ban aria-hidden />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </li>
   );
 }

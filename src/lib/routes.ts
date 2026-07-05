@@ -5,7 +5,10 @@ export const routes = {
   voiceOnboarding: "/onboarding/voz",
   signUpForVoiceOnboarding: "/sign-up?redirect_url=/onboarding/voz",
   dashboard: "/dashboard",
+  dashboardRules: "/dashboard/rules",
+  dashboardSimulator: "/dashboard/rules/simulator",
   settings: "/settings",
+  callDetail: (id: string) => `/dashboard/calls/${id}`,
   summaryDetail: (id: string) => `/dashboard/summaries/${id}`,
 } as const;
 

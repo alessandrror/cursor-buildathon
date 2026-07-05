@@ -1,0 +1,26 @@
+# CODEOWNERS — Gobernanza del Design System GhostLine
+#
+# Cualquier cambio a los archivos del sistema de diseño requiere la revisión y
+# aprobación de un owner del design system. Ver reglas en CLAUDE.md.
+# (Requiere branch protection con "Require review from Code Owners" para forzarlo.)
+
+# Fuente única de verdad de tokens / tema
+/src/app/globals.css          @Alex040822
+
+# Favicon / app icons
+/src/app/icon.svg             @Alex040822
+/src/app/apple-icon.png       @Alex040822
+
+# Primitivos shadcn (design system)
+/src/components/ui/           @Alex040822
+
+# Marca / branding
+/src/components/brand/        @Alex040822
+/public/brand/                @Alex040822
+
+# Apariencia de Clerk derivada de tokens
+/src/lib/clerk-appearance.ts  @Alex040822
+
+# Las propias reglas de gobernanza
+/CLAUDE.md                    @Alex040822
+/.github/CODEOWNERS           @Alex040822

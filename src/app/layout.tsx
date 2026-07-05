@@ -8,6 +8,8 @@ import {
 } from "next/font/google";
 
 import { SyncClerkUser } from "@/components/auth/sync-clerk-user";
+import { clerkAppearance } from "@/lib/clerk-appearance";
+import { routes } from "@/lib/routes";
 import { syncClerkUserToSupabase } from "@/lib/supabase/sync-clerk-user";
 
 import "./globals.css";
@@ -110,16 +112,22 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body
-        className={`${hanken.variable} ${schibsted.variable} ${newsreader.variable} antialiased`}
-      >
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <ClerkProvider>
+    <ClerkProvider
+      appearance={clerkAppearance}
+      signInUrl={routes.signIn}
+      signUpUrl={routes.signUp}
+      signInFallbackRedirectUrl={routes.dashboard}
+      signUpFallbackRedirectUrl={routes.dashboard}
+    >
+      <html lang="es" suppressHydrationWarning>
+        <body
+          className={`${hanken.variable} ${schibsted.variable} ${newsreader.variable} antialiased`}
+        >
+          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
           <SyncClerkUser />
           {children}
-        </ClerkProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

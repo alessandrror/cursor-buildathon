@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   BellRing,
   CheckCircle2,
@@ -15,6 +14,11 @@ import {
   UserPlus,
 } from "lucide-react";
 
+import {
+  AuthControls,
+  ClerkSignInButton,
+  ClerkSignUpButton,
+} from "@/components/layout/auth-controls";
 import { GhostLineLogo, GhostLineMark } from "@/components/brand/ghostline-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +68,9 @@ const trustSignals = [
   },
 ];
 
+const navAuthButtonClass =
+  "h-9 min-h-9 rounded-md border px-4 text-sm leading-none";
+
 export default function HomePage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-background text-foreground">
@@ -83,9 +90,13 @@ export default function HomePage() {
           </nav>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button asChild variant="secondary" size="sm">
-              <Link href="/sign-in">Crear cuenta</Link>
-            </Button>
+            <AuthControls
+              size="sm"
+              signInVariant="outline"
+              signUpVariant="secondary"
+              signInClassName={`hidden sm:inline-flex border-hero-foreground/30 bg-transparent text-hero-foreground hover:bg-hero-foreground/10 hover:text-hero-foreground ${navAuthButtonClass}`}
+              signUpClassName={`border-transparent bg-hero-foreground text-hero shadow-sm hover:bg-hero-foreground/90 ${navAuthButtonClass}`}
+            />
           </div>
         </div>
       </header>
@@ -112,17 +123,18 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-col flex-wrap gap-3 sm:flex-row">
-                <Button asChild size="lg" variant="secondary">
-                  <Link href="/sign-in">
-                    Crear cuenta y protegerme
-                    <UserPlus data-icon="inline-end" />
-                  </Link>
-                </Button>
+                <ClerkSignUpButton
+                  size="lg"
+                  className="border border-transparent bg-hero-foreground text-hero shadow-sm hover:bg-hero-foreground/90"
+                >
+                  Crear cuenta y protegerme
+                  <UserPlus data-icon="inline-end" />
+                </ClerkSignUpButton>
                 <Button
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-hero-foreground/30 bg-hero-foreground/5 text-hero-foreground hover:bg-hero-foreground/15 hover:text-hero-foreground"
+                  className="border-hero-foreground/30 bg-transparent text-hero-foreground hover:bg-hero-foreground/10 hover:text-hero-foreground"
                 >
                   <a href="#como-funciona">Ver cómo funciona</a>
                 </Button>
@@ -268,12 +280,10 @@ export default function HomePage() {
                 y consultar cada llamada filtrada desde tu dashboard privado.
               </p>
             </div>
-            <Button asChild size="lg" className="w-fit">
-              <Link href="/sign-in">
-                Registrarme ahora
-                <UserPlus data-icon="inline-end" />
-              </Link>
-            </Button>
+            <ClerkSignUpButton size="lg" className="w-fit">
+              Registrarme ahora
+              <UserPlus data-icon="inline-end" />
+            </ClerkSignUpButton>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
@@ -314,12 +324,10 @@ export default function HomePage() {
                 resúmenes generados después de cada conversación.
               </p>
               <div>
-                <Button asChild size="lg" variant="secondary">
-                  <Link href="/sign-in">
-                    Crear mi cuenta
-                    <Sparkles data-icon="inline-end" />
-                  </Link>
-                </Button>
+                <ClerkSignUpButton size="lg" variant="secondary">
+                  Crear mi cuenta
+                  <Sparkles data-icon="inline-end" />
+                </ClerkSignUpButton>
               </div>
             </div>
 
@@ -367,12 +375,18 @@ export default function HomePage() {
           </div>
           <div className="flex flex-col gap-3 text-sm">
             <span className="font-semibold">Cuenta</span>
-            <Link href="/sign-in" className="text-muted-foreground hover:text-foreground">
+            <ClerkSignUpButton
+              variant="link"
+              className="h-auto justify-start p-0 text-muted-foreground hover:text-foreground"
+            >
               Crear cuenta
-            </Link>
-            <Link href="/sign-in" className="text-muted-foreground hover:text-foreground">
+            </ClerkSignUpButton>
+            <ClerkSignInButton
+              variant="link"
+              className="h-auto justify-start p-0 text-muted-foreground hover:text-foreground"
+            >
               Iniciar sesión
-            </Link>
+            </ClerkSignInButton>
           </div>
         </div>
         <div className="border-t border-border px-6 py-4">

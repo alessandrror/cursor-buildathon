@@ -119,6 +119,50 @@ export type DbSystemEvent = {
   created_at: string;
 };
 
+export type VoiceProfileStatus =
+  | "pending"
+  | "ready"
+  | "verification_required"
+  | "failed"
+  | "revoked";
+
+export type VoiceInteractionMode = "prudente" | "equilibrado" | "detective";
+
+export type VoiceCloneEventType =
+  | "consent_given"
+  | "clone_requested"
+  | "clone_succeeded"
+  | "clone_failed"
+  | "profile_updated"
+  | "profile_revoked";
+
+export type DbUserVoiceProfile = {
+  id: string;
+  user_id: string;
+  elevenlabs_voice_id: string | null;
+  display_name: string;
+  status: VoiceProfileStatus;
+  requires_verification: boolean;
+  consented_at: string | null;
+  consent_version: string | null;
+  use_for_suspicious_calls: boolean;
+  interaction_mode: VoiceInteractionMode;
+  sample_count: number;
+  error_message: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbVoiceCloneEvent = {
+  id: string;
+  user_id: string;
+  voice_profile_id: string | null;
+  event_type: VoiceCloneEventType;
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -281,6 +325,58 @@ export type Database = {
         };
         Update: {
           event_type?: string;
+          payload?: Record<string, unknown>;
+        };
+        Relationships: [];
+      };
+      user_voice_profiles: {
+        Row: DbUserVoiceProfile;
+        Insert: {
+          id?: string;
+          user_id: string;
+          elevenlabs_voice_id?: string | null;
+          display_name?: string;
+          status?: VoiceProfileStatus;
+          requires_verification?: boolean;
+          consented_at?: string | null;
+          consent_version?: string | null;
+          use_for_suspicious_calls?: boolean;
+          interaction_mode?: VoiceInteractionMode;
+          sample_count?: number;
+          error_message?: string | null;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          elevenlabs_voice_id?: string | null;
+          display_name?: string;
+          status?: VoiceProfileStatus;
+          requires_verification?: boolean;
+          consented_at?: string | null;
+          consent_version?: string | null;
+          use_for_suspicious_calls?: boolean;
+          interaction_mode?: VoiceInteractionMode;
+          sample_count?: number;
+          error_message?: string | null;
+          deleted_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      voice_clone_events: {
+        Row: DbVoiceCloneEvent;
+        Insert: {
+          id?: string;
+          user_id: string;
+          voice_profile_id?: string | null;
+          event_type: VoiceCloneEventType;
+          payload?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: {
+          voice_profile_id?: string | null;
+          event_type?: VoiceCloneEventType;
           payload?: Record<string, unknown>;
         };
         Relationships: [];

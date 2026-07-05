@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  AlertCircle,
   Check,
   FileText,
   Mic,
@@ -12,60 +13,114 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GhostLineLogo } from "@/components/brand/ghostline-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { useAudioRecorder } from "@/hooks/use-audio-recorder";
+import {
+  createVoiceClone,
+  updateVoiceProfileSettings,
+} from "@/lib/voice-clone/client";
+import type { PublicVoiceProfile } from "@/lib/voice-clone/types";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
-const steps = ["Permiso", "Grabar", "Generar", "Listo"] as const;
+import { VOICE_SAMPLE_MIN_DURATION_MS } from "@/lib/voice-clone/constants";
+import { VOICE_RECORDING_PHRASES } from "@/lib/voice-clone/phrases";
 
-const recordingPhrases = [
-  "Hola, gracias por llamar. ¿De parte de quién y cuál es el motivo de tu llamada?",
-  "Entiendo. ¿Puedes decirme tu nombre y de qué empresa llamas?",
-  "Voy a tomar el mensaje para que la persona lo revise con calma.",
-  "No puedo compartir datos personales, pero puedo registrar tu solicitud.",
-  "Perfecto, dejo registrado el motivo de la llamada. Que tengas buen día.",
-];
+const steps = ["Permiso", "Grabar", "Generar", "Listo"] as const;
+const recordingPhrases = VOICE_RECORDING_PHRASES;
+
+type ClonePhase = "uploading" | "creating" | "done" | "error";
 
 export default function VoiceOnboardingPage() {
   const [step, setStep] = useState(0);
   const [consent, setConsent] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(1);
-  const [progress, setProgress] = useState(62);
-  const [useVoice, setUseVoice] = useState(true);
+  const [samples, setSamples] = useState<(Blob | null)[]>(
+    () => Array.from({ length: recordingPhrases.length }, () => null),
+  );
+  const [clonePhase, setClonePhase] = useState<ClonePhase>("uploading");
+  const [cloneProgress, setCloneProgress] = useState(12);
+  const [cloneError, setCloneError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<PublicVoiceProfile | null>(null);
+  const cloneStartedRef = useRef(false);
+
+  const runClone = useCallback(async (recordedSamples: Blob[]) => {
+    setClonePhase("uploading");
+    setCloneProgress(20);
+    setCloneError(null);
+
+    try {
+      setClonePhase("creating");
+      setCloneProgress(55);
+
+      const result = await createVoiceClone({ samples: recordedSamples });
+
+      setCloneProgress(100);
+      setClonePhase("done");
+      setProfile(result);
+      setStep(3);
+    } catch (error) {
+      setClonePhase("error");
+      setCloneError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo generar el clon de voz.",
+      );
+    }
+  }, []);
 
   useEffect(() => {
-    if (step !== 2) {
+    if (step !== 2 || cloneStartedRef.current) {
       return;
     }
 
-    setProgress(12);
-    const timer = window.setInterval(() => {
-      setProgress((current) => {
-        if (current >= 100) {
-          window.clearInterval(timer);
-          return 100;
-        }
-        return current + 10;
-      });
-    }, 350);
+    cloneStartedRef.current = true;
 
-    return () => window.clearInterval(timer);
-  }, [step]);
+    const recordedSamples = samples.filter(
+      (sample): sample is Blob => sample !== null,
+    );
+
+    void runClone(recordedSamples);
+  }, [runClone, samples, step]);
 
   useEffect(() => {
-    if (step === 2 && progress >= 100) {
-      const timer = window.setTimeout(() => setStep(3), 450);
-      return () => window.clearTimeout(timer);
+    if (step !== 2 || clonePhase === "error" || clonePhase === "done") {
+      return;
     }
-  }, [progress, step]);
 
-  const canContinueRecording = phraseIndex >= recordingPhrases.length;
+    const timer = window.setInterval(() => {
+      setCloneProgress((current) => {
+        if (current >= 90) {
+          return current;
+        }
+        return current + 4;
+      });
+    }, 400);
+
+    return () => window.clearInterval(timer);
+  }, [clonePhase, step]);
+
+  const resetRecording = useCallback(() => {
+    cloneStartedRef.current = false;
+    setSamples(Array.from({ length: recordingPhrases.length }, () => null));
+    setPhraseIndex(1);
+    setClonePhase("uploading");
+    setCloneProgress(12);
+    setCloneError(null);
+    setProfile(null);
+    setStep(1);
+  }, []);
+
+  const handleAllPhrasesRecorded = useCallback(() => {
+    cloneStartedRef.current = false;
+    setStep(2);
+  }, []);
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -97,26 +152,40 @@ export default function VoiceOnboardingPage() {
           {step === 1 && (
             <RecordStep
               phraseIndex={phraseIndex}
-              onRepeat={() => setPhraseIndex((current) => Math.max(1, current))}
+              samples={samples}
+              onSampleRecorded={(index, blob) => {
+                setSamples((current) => {
+                  const next = [...current];
+                  next[index] = blob;
+                  return next;
+                });
+              }}
+              onRepeat={() => {
+                setSamples((current) => {
+                  const next = [...current];
+                  next[phraseIndex - 1] = null;
+                  return next;
+                });
+              }}
               onNext={() => {
-                if (canContinueRecording) {
-                  setStep(2);
+                if (phraseIndex >= recordingPhrases.length) {
+                  handleAllPhrasesRecorded();
                 } else {
                   setPhraseIndex((current) => current + 1);
                 }
               }}
             />
           )}
-          {step === 2 && <GenerateStep progress={progress} />}
-          {step === 3 && (
-            <ReviewStep
-              useVoice={useVoice}
-              onUseVoiceChange={setUseVoice}
-              onBack={() => {
-                setPhraseIndex(1);
-                setStep(1);
-              }}
+          {step === 2 && (
+            <GenerateStep
+              progress={cloneProgress}
+              phase={clonePhase}
+              error={cloneError}
+              onRetry={resetRecording}
             />
+          )}
+          {step === 3 && profile && (
+            <ReviewStep profile={profile} onBack={resetRecording} />
           )}
         </div>
       </section>
@@ -181,7 +250,7 @@ function PermissionStep({
 
       <Card className="mt-6 w-full gap-0 py-0 text-left shadow-none">
         <CardContent className="flex flex-col gap-4 p-5">
-          <ConsentPoint>Leerás 5 frases en voz alta (~1 minuto).</ConsentPoint>
+          <ConsentPoint>Leerás 3 frases en voz alta (~1 minuto en total).</ConsentPoint>
           <ConsentPoint>Creamos un clon privado, cifrado y solo tuyo.</ConsentPoint>
           <ConsentPoint>
             Se usa únicamente para atender llamadas de estafa.
@@ -218,14 +287,68 @@ function PermissionStep({
 
 function RecordStep({
   phraseIndex,
+  samples,
+  onSampleRecorded,
   onRepeat,
   onNext,
 }: {
   phraseIndex: number;
+  samples: (Blob | null)[];
+  onSampleRecorded: (index: number, blob: Blob) => void;
   onRepeat: () => void;
   onNext: () => void;
 }) {
   const phrase = recordingPhrases[phraseIndex - 1];
+  const currentSample = samples[phraseIndex - 1];
+  const recorder = useAudioRecorder();
+  const [error, setError] = useState<string | null>(null);
+  const [isStopping, setIsStopping] = useState(false);
+
+  const completedCount = samples.filter(Boolean).length;
+  const minDurationMs = VOICE_SAMPLE_MIN_DURATION_MS;
+  const hasMinDuration = recorder.durationMs >= minDurationMs;
+  const canContinue =
+    currentSample !== null && !recorder.isRecording && !isStopping;
+
+  const handleToggleRecording = async () => {
+    setError(null);
+
+    if (recorder.isRecording) {
+      if (!hasMinDuration) {
+        setError(
+          `Graba al menos ${Math.round(minDurationMs / 1000)} segundos antes de cortar.`,
+        );
+        return;
+      }
+
+      setIsStopping(true);
+      try {
+        const blob = await recorder.stop();
+        onSampleRecorded(phraseIndex - 1, blob);
+      } catch (recordError) {
+        setError(
+          recordError instanceof Error
+            ? recordError.message
+            : "No se pudo guardar la grabación.",
+        );
+      } finally {
+        setIsStopping(false);
+      }
+      return;
+    }
+
+    try {
+      await recorder.start();
+    } catch (recordError) {
+      setError(
+        recordError instanceof Error
+          ? recordError.message
+          : "No se pudo iniciar la grabación.",
+      );
+    }
+  };
+
+  const activeBars = recorder.isRecording || currentSample ? 18 : 6;
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
@@ -241,43 +364,133 @@ function RecordStep({
         </p>
       </div>
 
-      <Waveform className="mt-8" activeBars={18} />
+      <Waveform className="mt-8" activeBars={activeBars} />
 
       <div className="mt-7 flex items-center gap-5">
-        <span className="flex size-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-          <span className="flex size-12 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
-            <Square className="size-5 fill-current" aria-hidden />
+        <button
+          type="button"
+          onClick={() => void handleToggleRecording()}
+          disabled={isStopping}
+          className={cn(
+            "flex size-16 items-center justify-center rounded-full transition-colors",
+            recorder.isRecording
+              ? "bg-destructive/10 text-destructive"
+              : "bg-primary/10 text-primary hover:bg-primary/15",
+          )}
+          aria-label={
+            recorder.isRecording ? "Detener grabación" : "Iniciar grabación"
+          }
+        >
+          <span
+            className={cn(
+              "flex size-12 items-center justify-center rounded-full",
+              recorder.isRecording
+                ? "bg-destructive text-destructive-foreground"
+                : "bg-primary text-primary-foreground",
+            )}
+          >
+            {recorder.isRecording ? (
+              <Square className="size-5 fill-current" aria-hidden />
+            ) : (
+              <Mic className="size-5" aria-hidden />
+            )}
           </span>
-        </span>
+        </button>
         <div className="text-left">
-          <p className="font-semibold text-destructive">Grabando...</p>
-          <p className="text-sm text-muted-foreground">0:08 · toca para cortar</p>
+          <p
+            className={cn(
+              "font-semibold",
+              recorder.isRecording ? "text-destructive" : "text-foreground",
+            )}
+          >
+            {recorder.isRecording
+              ? "Grabando..."
+              : currentSample
+                ? "Frase guardada"
+                : "Toca para grabar"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {recorder.isRecording
+              ? hasMinDuration
+                ? `${recorder.formatDuration(recorder.durationMs)} · toca para cortar`
+                : `${recorder.formatDuration(recorder.durationMs)} · mínimo ${Math.round(minDurationMs / 1000)} s`
+              : currentSample
+                ? "Puedes repetir o continuar"
+                : `Graba ~${Math.round(minDurationMs / 1000)} s por frase antes de continuar`}
+          </p>
         </div>
       </div>
 
+      {error && (
+        <p className="mt-4 flex items-center gap-2 text-sm font-medium text-destructive">
+          <AlertCircle className="size-4 shrink-0" aria-hidden />
+          {error}
+        </p>
+      )}
+
       <div className="mt-7 flex items-center gap-2 text-sm font-semibold">
-        <span>Frase {phraseIndex} de 5</span>
-        <PhraseDots current={phraseIndex} />
+        <span>
+          Frase {phraseIndex} de {recordingPhrases.length}
+        </span>
+        <PhraseDots current={phraseIndex} completedCount={completedCount} />
       </div>
 
       <div className="mt-7 grid w-full gap-3 sm:grid-cols-2">
-        <Button variant="outline" size="lg" onClick={onRepeat}>
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={onRepeat}
+          disabled={recorder.isRecording || isStopping}
+        >
           Repetir
         </Button>
-        <Button size="lg" onClick={onNext}>
+        <Button
+          size="lg"
+          onClick={onNext}
+          disabled={!canContinue}
+        >
           {phraseIndex >= recordingPhrases.length
             ? "Generar clon"
             : "Siguiente frase"}
         </Button>
       </div>
       <p className="mt-6 text-sm text-muted-foreground">
-        Consejo: habla claro y en un lugar silencioso.
+        Consejo: habla claro, en un lugar silencioso, y mantén cada frase al
+        menos {Math.round(VOICE_SAMPLE_MIN_DURATION_MS / 1000)} segundos.
       </p>
     </div>
   );
 }
 
-function GenerateStep({ progress }: { progress: number }) {
+function GenerateStep({
+  progress,
+  phase,
+  error,
+  onRetry,
+}: {
+  progress: number;
+  phase: ClonePhase;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  if (phase === "error") {
+    return (
+      <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+        <IconBubble icon={AlertCircle} />
+        <h1 className="mt-6 font-display text-4xl font-black leading-tight sm:text-5xl">
+          No pudimos generar tu clon
+        </h1>
+        <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
+          {error ??
+            "Ocurrió un error al procesar tus muestras. Puedes volver a grabar e intentarlo."}
+        </p>
+        <Button className="mt-8" size="lg" onClick={onRetry}>
+          Volver a grabar
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
       <IconBubble icon={Volume2} size="lg" />
@@ -297,16 +510,24 @@ function GenerateStep({ progress }: { progress: number }) {
           />
         </div>
         <div className="mt-4 flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Sintetizando tu voz</span>
+          <span className="text-muted-foreground">
+            {phase === "uploading"
+              ? "Enviando muestras"
+              : "Sintetizando tu voz"}
+          </span>
           <span className="font-semibold">{progress}%</span>
         </div>
       </div>
 
       <Card className="mt-6 w-full gap-0 py-0 text-left shadow-none">
         <CardContent className="flex flex-col gap-4 p-5">
-          <ProcessLine done>Muestras recibidas</ProcessLine>
-          <ProcessLine done>Analizando timbre y entonación</ProcessLine>
-          <ProcessLine active>Sintetizando tu voz</ProcessLine>
+          <ProcessLine done={progress >= 20}>Muestras recibidas</ProcessLine>
+          <ProcessLine done={progress >= 55}>
+            Analizando timbre y entonación
+          </ProcessLine>
+          <ProcessLine active={progress < 100}>
+            Sintetizando tu voz
+          </ProcessLine>
         </CardContent>
       </Card>
     </div>
@@ -314,29 +535,70 @@ function GenerateStep({ progress }: { progress: number }) {
 }
 
 function ReviewStep({
-  useVoice,
-  onUseVoiceChange,
+  profile,
   onBack,
 }: {
-  useVoice: boolean;
-  onUseVoiceChange: (checked: boolean) => void;
+  profile: PublicVoiceProfile;
   onBack: () => void;
 }) {
-  const [mode, setMode] = useState<"prudente" | "equilibrado" | "detective">(
-    "equilibrado",
-  );
-  const [voiceName, setVoiceName] = useState("Mi voz (Ana)");
+  const [mode, setMode] = useState<
+    "prudente" | "equilibrado" | "detective"
+  >(profile.interactionMode as "prudente" | "equilibrado" | "detective");
+  const [voiceName, setVoiceName] = useState(profile.displayName);
+  const [useVoice, setUseVoice] = useState(profile.useForSuspiciousCalls);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const needsVerification =
+    profile.status === "verification_required" || profile.requiresVerification;
+
+  const handleFinish = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      await updateVoiceProfileSettings({
+        displayName: voiceName,
+        useForSuspiciousCalls: useVoice,
+        interactionMode: mode,
+        completeOnboarding: true,
+      });
+      window.location.href = routes.dashboard;
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron guardar los ajustes.",
+      );
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
       <IconBubble icon={Check} />
       <h1 className="mt-6 font-display text-4xl font-black leading-tight sm:text-5xl">
-        ¡Tu clon de voz está listo!
+        {needsVerification
+          ? "Clon creado — verificación pendiente"
+          : "¡Tu clon de voz está listo!"}
       </h1>
       <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-        GhostLine ya puede contestar las estafas con tu voz y sacarles
-        información sin que tú tengas que atender.
+        {needsVerification
+          ? "ElevenLabs puede requerir verificación adicional antes de usar tu voz en llamadas. Mientras tanto, puedes guardar tus preferencias."
+          : "GhostLine ya puede contestar las estafas con tu voz y sacarles información sin que tú tengas que atender."}
       </p>
+
+      {needsVerification && (
+        <Card className="mt-5 w-full gap-0 py-0 text-left shadow-none">
+          <CardContent className="flex items-start gap-3 p-5">
+            <AlertCircle className="mt-0.5 size-5 shrink-0 text-primary" />
+            <p className="text-sm leading-6 text-muted-foreground">
+              Tu clon fue creado pero ElevenLabs marcó que requiere verificación.
+              Te avisaremos cuando esté listo para usarse en llamadas.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mt-6 w-full gap-0 py-0 text-left shadow-none">
         <CardHeader className="px-5 pt-5 pb-2">
@@ -366,7 +628,7 @@ function ReviewStep({
               Se activa solo cuando una regla marca la llamada como sospechosa.
             </p>
           </div>
-          <Switch checked={useVoice} onCheckedChange={onUseVoiceChange} />
+          <Switch checked={useVoice} onCheckedChange={setUseVoice} />
         </CardContent>
       </Card>
 
@@ -408,15 +670,20 @@ function ReviewStep({
         </CardContent>
       </Card>
 
+      {saveError && (
+        <p className="mt-4 flex items-center gap-2 text-sm font-medium text-destructive">
+          <AlertCircle className="size-4 shrink-0" aria-hidden />
+          {saveError}
+        </p>
+      )}
+
       <div className="mt-5 grid w-full gap-3 sm:grid-cols-2">
-        <Button variant="outline" size="lg" onClick={onBack}>
+        <Button variant="outline" size="lg" onClick={onBack} disabled={isSaving}>
           Volver a grabar
         </Button>
-        <Button asChild size="lg">
-          <Link href={routes.dashboard}>
-            Ir al panel
-            <Check data-icon="inline-end" />
-          </Link>
+        <Button size="lg" onClick={() => void handleFinish()} disabled={isSaving}>
+          {isSaving ? "Guardando..." : "Ir al panel"}
+          <Check data-icon="inline-end" />
         </Button>
       </div>
     </div>
@@ -453,7 +720,13 @@ function ConsentPoint({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PhraseDots({ current }: { current: number }) {
+function PhraseDots({
+  current,
+  completedCount,
+}: {
+  current: number;
+  completedCount: number;
+}) {
   return (
     <div className="flex items-center gap-1.5" aria-hidden>
       {recordingPhrases.map((_, index) => (
@@ -461,7 +734,7 @@ function PhraseDots({ current }: { current: number }) {
           key={index}
           className={cn(
             "size-2 rounded-full bg-muted",
-            index + 1 <= current && "bg-primary",
+            (index + 1 <= current || index < completedCount) && "bg-primary",
           )}
         />
       ))}
@@ -524,7 +797,12 @@ function ProcessLine({
           <span className="size-2 rounded-full bg-current" />
         )}
       </span>
-      <p className={cn("text-muted-foreground", active && "font-semibold text-foreground")}>
+      <p
+        className={cn(
+          "text-muted-foreground",
+          active && "font-semibold text-foreground",
+        )}
+      >
         {children}
       </p>
     </div>

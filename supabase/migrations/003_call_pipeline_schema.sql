@@ -186,53 +186,80 @@ alter table public.notifications enable row level security;
 alter table public.system_events enable row level security;
 
 -- phone_numbers: read own
-create policy "Users can view their own phone numbers"
-  on public.phone_numbers for select to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can view their own phone numbers"
+    on public.phone_numbers for select to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
 -- answering_rules: full CRUD own
-create policy "Users can view their own answering rules"
-  on public.answering_rules for select to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can view their own answering rules"
+    on public.answering_rules for select to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
-create policy "Users can insert their own answering rules"
-  on public.answering_rules for insert to authenticated
-  with check ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can insert their own answering rules"
+    on public.answering_rules for insert to authenticated
+    with check ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
-create policy "Users can update their own answering rules"
-  on public.answering_rules for update to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id)
-  with check ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can update their own answering rules"
+    on public.answering_rules for update to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id)
+    with check ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
-create policy "Users can delete their own answering rules"
-  on public.answering_rules for delete to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can delete their own answering rules"
+    on public.answering_rules for delete to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
 -- calls: read own (writes via service_role / n8n)
-create policy "Users can view their own calls"
-  on public.calls for select to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can view their own calls"
+    on public.calls for select to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
 -- call_transcripts: read via call ownership
-create policy "Users can view transcripts of their own calls"
-  on public.call_transcripts for select to authenticated
-  using (
-    exists (
-      select 1 from public.calls c
-      where c.id = call_transcripts.call_id
-        and c.user_id = (select auth.jwt() ->> 'sub')
-    )
-  );
+do $$ begin
+  create policy "Users can view transcripts of their own calls"
+    on public.call_transcripts for select to authenticated
+    using (
+      exists (
+        select 1 from public.calls c
+        where c.id = call_transcripts.call_id
+          and c.user_id = (select auth.jwt() ->> 'sub')
+      )
+    );
+exception when duplicate_object then null;
+end $$;
 
 -- call_summaries: read own
-create policy "Users can view their own call summaries"
-  on public.call_summaries for select to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can view their own call summaries"
+    on public.call_summaries for select to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
 -- notifications: read own
-create policy "Users can view their own notifications"
-  on public.notifications for select to authenticated
-  using ((select auth.jwt() ->> 'sub') = user_id);
+do $$ begin
+  create policy "Users can view their own notifications"
+    on public.notifications for select to authenticated
+    using ((select auth.jwt() ->> 'sub') = user_id);
+exception when duplicate_object then null;
+end $$;
 
 -- system_events: no authenticated policies (service_role only)
 

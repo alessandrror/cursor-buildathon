@@ -127,6 +127,7 @@ Ver [`contracts/idempotency-keys.md`](contracts/idempotency-keys.md).
 - Post-call webhook URL: `https://<n8n-host>/webhook/elevenlabs/post-call`
 - Timeout inactividad primer turno: ~5 s (silencio inicial)
 - Grabación: desactivada
+- **Voz clonada por usuario:** ver [`voice-override.md`](voice-override.md)
 
 ## Smoke test local
 

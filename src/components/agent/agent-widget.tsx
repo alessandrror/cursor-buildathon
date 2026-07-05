@@ -19,6 +19,7 @@ type AgentWidgetProps = {
 
 export function AgentWidget({ ownerName, clerkUserId }: AgentWidgetProps) {
   const [agentId, setAgentId] = useState<string | null>(null);
+  const [overrideVoiceId, setOverrideVoiceId] = useState<string | null>(null);
   const [microphoneStatus, setMicrophoneStatus] = useState<
     "checking" | "supported" | "unsupported"
   >("checking");
@@ -42,7 +43,10 @@ export function AgentWidget({ ownerName, clerkUserId }: AgentWidgetProps) {
 
     fetch("/api/agent/signed-url")
       .then((r) => r.json())
-      .then((d) => setAgentId(d.agent_id ?? null))
+      .then((d) => {
+        setAgentId(d.agent_id ?? null);
+        setOverrideVoiceId(d.override_voice_id ?? null);
+      })
       .catch(console.error);
   }, [microphoneStatus, clerkUserId]);
 
@@ -90,6 +94,7 @@ export function AgentWidget({ ownerName, clerkUserId }: AgentWidgetProps) {
       <elevenlabs-convai
         ref={widgetRef}
         agent-id={agentId}
+        override-voice-id={overrideVoiceId ?? undefined}
         dynamic-variables={JSON.stringify({
           owner_name: ownerName,
           clerk_user_id: clerkUserId,

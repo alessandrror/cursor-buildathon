@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 
 import { CallSummaryView } from "@/components/dashboard/call-summary-view";
-import { getCallDetailForDashboard } from "@/lib/calls/data-source";
+import {
+  getCallDetailForDashboard,
+  isMockCallsEnabled,
+} from "@/lib/calls/data-source";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 type SummaryDetailPageProps = {
@@ -12,8 +15,9 @@ export default async function SummaryDetailPage({
   params,
 }: SummaryDetailPageProps) {
   const { id } = await params;
+  const useMock = isMockCallsEnabled();
 
-  if (!isSupabaseConfigured()) {
+  if (!useMock && !isSupabaseConfigured()) {
     notFound();
   }
 
@@ -29,5 +33,5 @@ export default async function SummaryDetailPage({
     notFound();
   }
 
-  return <CallSummaryView call={call} />;
+  return <CallSummaryView call={call} showMockBanner={useMock} />;
 }

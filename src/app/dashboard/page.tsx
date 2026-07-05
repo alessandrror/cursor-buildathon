@@ -6,9 +6,11 @@ import { DashboardCallBoard } from "@/components/dashboard/dashboard-call-board"
 import { DashboardCallSync } from "@/components/dashboard/dashboard-call-sync";
 import { CallMetricsGrid } from "@/components/dashboard/call-metrics";
 import { CallsEmptyState } from "@/components/dashboard/calls-empty-state";
+import { MockDataBanner } from "@/components/dashboard/mock-data-banner";
 import {
   getCallsForDashboard,
   getGhostLineNumberForDashboard,
+  isMockCallsEnabled,
 } from "@/lib/calls/data-source";
 import { computeCallMetrics } from "@/lib/calls/presentation";
 import {
@@ -29,13 +31,16 @@ export default async function DashboardPage() {
   const user = await currentUser();
   const ownerName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "el propietario";
+  const useMock = isMockCallsEnabled();
 
   let calls: Awaited<ReturnType<typeof getCallsForDashboard>> = [];
   let ghostLineNumber: string | null = null;
   let loadError: string | null = null;
   let loadHint: string | null = null;
 
-  if (!isSupabaseConfigured()) {
+  if (useMock) {
+    calls = await getCallsForDashboard();
+  } else if (!isSupabaseConfigured()) {
     loadError = "Faltan variables de entorno de Supabase.";
   } else {
     try {
@@ -63,6 +68,8 @@ export default async function DashboardPage() {
         </p>
       </header>
 
+      {useMock && <MockDataBanner />}
+
       <section
         aria-label="Número GhostLine"
         className="rounded-xl bg-primary px-5 py-4 text-primary-foreground shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-6"
@@ -87,7 +94,7 @@ export default async function DashboardPage() {
 
       <section aria-label="Historial de llamadas">
         {calls.length === 0 ? (
-          <CallsEmptyState error={loadError} hint={loadHint} />
+          <CallsEmptyState error={loadError} hint={loadHint} showDevHint={useMock} />
         ) : (
           <DashboardCallBoard calls={calls} />
         )}

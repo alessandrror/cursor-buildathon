@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-07-05T02:03:14.693Z",
+  "createdAt": "2026-07-05T01:47:17.283Z",
+  "id": "EVuxizOW0p0dGqeZ",
   "name": "twilio-incoming-call",
+  "description": "",
+  "active": false,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -12,7 +18,10 @@
       "name": "Webhook — Twilio Incoming Call",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "twilio-incoming-call"
     },
     {
@@ -23,18 +32,26 @@
       "name": "Validate Twilio Signature",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true },
+          "options": {
+            "caseSensitive": true
+          },
           "conditions": [
             {
               "id": "sig-check",
               "leftValue": "={{ $json.valid }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ]
         }
@@ -43,13 +60,24 @@
       "name": "Signature Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "insert",
-        "schema": { "__rl": true, "value": "public", "mode": "list" },
-        "table": { "__rl": true, "value": "system_events", "mode": "list" },
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "system_events",
+          "mode": "list"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -62,20 +90,41 @@
       "name": "Insert security_alert event",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [900, 480],
-      "credentials": { "supabaseApi": { "id": "SUPABASE_CRED_ID", "name": "Supabase service_role" } }
+      "position": [
+        900,
+        480
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      }
     },
     {
       "parameters": {
         "respondWith": "text",
         "responseBody": "Forbidden",
-        "options": { "responseCode": 403, "responseHeaders": { "entries": [{ "name": "Content-Type", "value": "text/plain" }] } }
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain"
+              }
+            ]
+          }
+        }
       },
       "id": "respond-403",
       "name": "Respond 403",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1120, 480]
+      "position": [
+        1120,
+        480
+      ]
     },
     {
       "parameters": {
@@ -85,16 +134,31 @@
       "name": "Extract Call Fields",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "getAll",
-        "schema": { "__rl": true, "value": "public", "mode": "list" },
-        "table": { "__rl": true, "value": "calls", "mode": "list" },
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "calls",
+          "mode": "list"
+        },
         "filters": {
           "conditions": [
-            { "keyName": "twilio_call_sid", "keyValue": "={{ $json.callSid }}", "condition": "eq" }
+            {
+              "keyName": "twilio_call_sid",
+              "keyValue": "={{ $json.callSid }}",
+              "condition": "eq"
+            }
           ]
         },
         "limit": 1,
@@ -104,8 +168,16 @@
       "name": "Check Idempotency (calls by callSid)",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [1120, 300],
-      "credentials": { "supabaseApi": { "id": "SUPABASE_CRED_ID", "name": "Supabase service_role" } }
+      "position": [
+        1120,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      }
     },
     {
       "parameters": {
@@ -115,7 +187,10 @@
               "id": "existing-call",
               "leftValue": "={{ $json.id }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEmpty" }
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
             }
           ]
         }
@@ -124,7 +199,10 @@
       "name": "Already processed?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     },
     {
       "parameters": {
@@ -134,17 +212,36 @@
       "name": "Build Idempotent TwiML",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 200]
+      "position": [
+        1560,
+        200
+      ]
     },
     {
       "parameters": {
         "operation": "getAll",
-        "schema": { "__rl": true, "value": "public", "mode": "list" },
-        "table": { "__rl": true, "value": "phone_numbers", "mode": "list" },
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "phone_numbers",
+          "mode": "list"
+        },
         "filters": {
           "conditions": [
-            { "keyName": "e164_number", "keyValue": "={{ $('Extract Call Fields').first().json.to }}", "condition": "eq" },
-            { "keyName": "status", "keyValue": "active", "condition": "eq" }
+            {
+              "keyName": "e164_number",
+              "keyValue": "={{ $('Extract Call Fields').first().json.to }}",
+              "condition": "eq"
+            },
+            {
+              "keyName": "status",
+              "keyValue": "active",
+              "condition": "eq"
+            }
           ]
         },
         "limit": 1,
@@ -154,8 +251,16 @@
       "name": "Resolve Owner (phone_numbers)",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [1560, 380],
-      "credentials": { "supabaseApi": { "id": "SUPABASE_CRED_ID", "name": "Supabase service_role" } }
+      "position": [
+        1560,
+        380
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      }
     },
     {
       "parameters": {
@@ -165,7 +270,10 @@
               "id": "has-owner",
               "leftValue": "={{ $json.id }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEmpty" }
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
             }
           ]
         }
@@ -174,17 +282,36 @@
       "name": "Owner Found?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1780, 380]
+      "position": [
+        1780,
+        380
+      ]
     },
     {
       "parameters": {
         "operation": "getAll",
-        "schema": { "__rl": true, "value": "public", "mode": "list" },
-        "table": { "__rl": true, "value": "answering_rules", "mode": "list" },
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "answering_rules",
+          "mode": "list"
+        },
         "filters": {
           "conditions": [
-            { "keyName": "user_id", "keyValue": "={{ $json.user_id }}", "condition": "eq" },
-            { "keyName": "is_active", "keyValue": "true", "condition": "eq" }
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $json.user_id }}",
+              "condition": "eq"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "true",
+              "condition": "eq"
+            }
           ]
         },
         "options": {}
@@ -193,8 +320,16 @@
       "name": "Fetch Answering Rules",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [2000, 300],
-      "credentials": { "supabaseApi": { "id": "SUPABASE_CRED_ID", "name": "Supabase service_role" } }
+      "position": [
+        2000,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      }
     },
     {
       "parameters": {
@@ -204,13 +339,24 @@
       "name": "Evaluate Rules",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2220, 300]
+      "position": [
+        2220,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "insert",
-        "schema": { "__rl": true, "value": "public", "mode": "list" },
-        "table": { "__rl": true, "value": "calls", "mode": "list" },
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "calls",
+          "mode": "list"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -229,8 +375,16 @@
       "name": "Insert Call Record",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [2440, 300],
-      "credentials": { "supabaseApi": { "id": "SUPABASE_CRED_ID", "name": "Supabase service_role" } }
+      "position": [
+        2440,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      }
     },
     {
       "parameters": {
@@ -240,7 +394,10 @@
       "name": "Build TwiML Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2660, 300]
+      "position": [
+        2660,
+        300
+      ]
     },
     {
       "parameters": {
@@ -248,14 +405,24 @@
         "responseBody": "={{ $json.twiml }}",
         "options": {
           "responseCode": 200,
-          "responseHeaders": { "entries": [{ "name": "Content-Type", "value": "text/xml" }] }
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/xml"
+              }
+            ]
+          }
         }
       },
       "id": "respond-twiml",
       "name": "Respond TwiML",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [2880, 300]
+      "position": [
+        2880,
+        300
+      ]
     },
     {
       "parameters": {
@@ -265,13 +432,24 @@
       "name": "Orphan Number TwiML",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2000, 500]
+      "position": [
+        2000,
+        500
+      ]
     },
     {
       "parameters": {
         "operation": "insert",
-        "schema": { "__rl": true, "value": "public", "mode": "list" },
-        "table": { "__rl": true, "value": "system_events", "mode": "list" },
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "system_events",
+          "mode": "list"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -284,8 +462,16 @@
       "name": "Insert orphan_webhook event",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [2220, 500],
-      "credentials": { "supabaseApi": { "id": "SUPABASE_CRED_ID", "name": "Supabase service_role" } }
+      "position": [
+        2220,
+        500
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      }
     },
     {
       "parameters": {
@@ -293,14 +479,24 @@
         "responseBody": "={{ $('Orphan Number TwiML').first().json.twiml }}",
         "options": {
           "responseCode": 200,
-          "responseHeaders": { "entries": [{ "name": "Content-Type", "value": "text/xml" }] }
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/xml"
+              }
+            ]
+          }
         }
       },
       "id": "respond-orphan",
       "name": "Respond Orphan TwiML",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [2440, 500]
+      "position": [
+        2440,
+        500
+      ]
     },
     {
       "parameters": {
@@ -308,73 +504,223 @@
         "responseBody": "={{ $('Build Idempotent TwiML').first().json.twiml }}",
         "options": {
           "responseCode": 200,
-          "responseHeaders": { "entries": [{ "name": "Content-Type", "value": "text/xml" }] }
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/xml"
+              }
+            ]
+          }
         }
       },
       "id": "respond-idempotent",
       "name": "Respond Idempotent TwiML",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1780, 200]
+      "position": [
+        1780,
+        200
+      ]
     }
   ],
   "connections": {
     "Webhook — Twilio Incoming Call": {
-      "main": [[{ "node": "Validate Twilio Signature", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Validate Twilio Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Validate Twilio Signature": {
-      "main": [[{ "node": "Signature Valid?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Signature Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Signature Valid?": {
       "main": [
-        [{ "node": "Extract Call Fields", "type": "main", "index": 0 }],
-        [{ "node": "Insert security_alert event", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Extract Call Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert security_alert event",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Insert security_alert event": {
-      "main": [[{ "node": "Respond 403", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond 403",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract Call Fields": {
-      "main": [[{ "node": "Check Idempotency (calls by callSid)", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Check Idempotency (calls by callSid)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Check Idempotency (calls by callSid)": {
-      "main": [[{ "node": "Already processed?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Already processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Already processed?": {
       "main": [
-        [{ "node": "Build Idempotent TwiML", "type": "main", "index": 0 }],
-        [{ "node": "Resolve Owner (phone_numbers)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Idempotent TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resolve Owner (phone_numbers)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Idempotent TwiML": {
-      "main": [[{ "node": "Respond Idempotent TwiML", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond Idempotent TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Resolve Owner (phone_numbers)": {
-      "main": [[{ "node": "Owner Found?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Owner Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Owner Found?": {
       "main": [
-        [{ "node": "Fetch Answering Rules", "type": "main", "index": 0 }],
-        [{ "node": "Orphan Number TwiML", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Fetch Answering Rules",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Orphan Number TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Fetch Answering Rules": {
-      "main": [[{ "node": "Evaluate Rules", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Evaluate Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Evaluate Rules": {
-      "main": [[{ "node": "Insert Call Record", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Insert Call Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Insert Call Record": {
-      "main": [[{ "node": "Build TwiML Response", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build TwiML Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build TwiML Response": {
-      "main": [[{ "node": "Respond TwiML", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Orphan Number TwiML": {
-      "main": [[{ "node": "Insert orphan_webhook event", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Insert orphan_webhook event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Insert orphan_webhook event": {
-      "main": [[{ "node": "Respond Orphan TwiML", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond Orphan TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -382,8 +728,34 @@
     "errorWorkflow": ""
   },
   "staticData": null,
-  "tags": ["twilio", "incoming-call", "call-routing"],
-  "triggerCount": 1,
-  "updatedAt": "2026-07-04T00:00:00.000Z",
-  "versionId": "1"
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "5724b67a-4d25-4891-9b0d-c971b1ba0ec0",
+  "activeVersionId": null,
+  "versionCounter": 2,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-07-05T01:47:17.286Z",
+      "createdAt": "2026-07-05T01:47:17.286Z",
+      "role": "workflow:owner",
+      "workflowId": "EVuxizOW0p0dGqeZ",
+      "projectId": "NJm3zAcNWwRr1wuT",
+      "project": {
+        "updatedAt": "2026-07-04T18:36:16.473Z",
+        "createdAt": "2026-07-04T18:36:07.122Z",
+        "id": "NJm3zAcNWwRr1wuT",
+        "name": "Angel Antonio Bran <angelbranm@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "17e1546c-7e55-490d-b06b-7aa72655308f"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": null
 }

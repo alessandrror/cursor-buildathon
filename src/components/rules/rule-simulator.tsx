@@ -3,7 +3,7 @@
 // Simulador de escenarios: corre la lógica pura de evaluación/silencio contra las
 // reglas configuradas, sin depender de n8n/Twilio/ElevenLabs.
 // spec: evaluacion §Ejemplos; deteccion-silencio-inicial §Ejemplos.
-import { Check, PhoneIncoming, X } from "lucide-react";
+import { Check, PhoneIncoming, Volume2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { useAnsweringRules } from "@/hooks/use-answering-rules";
@@ -11,7 +11,6 @@ import { DEFAULT_PROFILE } from "@/lib/rules/defaults";
 import { evaluateIncomingCall } from "@/lib/rules/evaluate";
 import {
   decisionLabel,
-  decisionVariant,
   matchedRuleLabel,
   outcomeLabel,
   outcomeVariant,
@@ -23,44 +22,62 @@ import { evaluateInitialSilence } from "@/lib/rules/silence";
 import type { EvaluationResult } from "@/lib/rules/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { SectionCard } from "@/components/rules/ui";
+import { cn } from "@/lib/utils";
 
 export function RuleSimulator() {
   const { rules, status } = useAnsweringRules();
 
   return (
-    <div className="flex flex-col gap-6">
-      <CustomSimulator rulesReady={status === "ready"} rules={rules} />
-      <SpecEvaluateScenarios />
-      <SilenceScenarios />
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+      <div className="lg:sticky lg:top-24">
+        <CustomSimulator rulesReady={status === "ready"} rules={rules} />
+      </div>
+      <div className="flex flex-col gap-5">
+        <SpecEvaluateScenarios />
+        <SilenceScenarios />
+      </div>
     </div>
   );
 }
 
-function DecisionResult({ result }: { result: EvaluationResult }) {
-  const outcome = result.decision === "reject" ? "rejected" : "in_progress";
+function ResultBanner({ result }: { result: EvaluationResult }) {
+  const answered = result.decision === "answer";
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-background p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={decisionVariant[result.decision]}>
+    <div
+      className={cn(
+        "flex flex-col gap-3 rounded-xl border p-4",
+        answered
+          ? "border-success/30 bg-success/10"
+          : "border-destructive/30 bg-destructive/10",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "flex size-8 items-center justify-center rounded-full text-background",
+            answered ? "bg-success" : "bg-destructive",
+          )}
+        >
+          {answered ? <Check className="size-4" /> : <X className="size-4" />}
+        </span>
+        <span className="font-display text-lg font-black">
           {decisionLabel[result.decision]}
-        </Badge>
+        </span>
         {result.rejectAction ? (
           <Badge variant="outline">{rejectActionLabel[result.rejectAction]}</Badge>
         ) : null}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+          Regla aplicada
+        </span>
         <Badge variant="secondary">
           {matchedRuleLabel[result.matchedRule] ?? result.matchedRule}
         </Badge>
-        <Badge variant={outcomeVariant[outcome]}>{outcomeLabel[outcome]}</Badge>
       </div>
       <p className="text-sm text-muted-foreground">{result.reason}</p>
     </div>
@@ -91,67 +108,67 @@ function CustomSimulator({
       }
       callerNumber = normalized;
     }
-    const timestamp = new Date(when);
     setResult(
-      evaluateIncomingCall({ callerNumber, timestamp }, rules, DEFAULT_PROFILE),
+      evaluateIncomingCall(
+        { callerNumber, timestamp: new Date(when) },
+        rules,
+        DEFAULT_PROFILE,
+      ),
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2 text-primary">
-          <PhoneIncoming className="size-5" />
-        </div>
-        <CardTitle>Simular una llamada entrante</CardTitle>
-        <CardDescription>
-          Se evalúa con tus reglas configuradas. La hora se interpreta en la zona
-          horaria del perfil ({DEFAULT_PROFILE.timezone}).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <Switch
-            id="sim-anon"
-            checked={anonymous}
-            onCheckedChange={setAnonymous}
-          />
-          <Label htmlFor="sim-anon">Llamada anónima / número oculto</Label>
-        </div>
+    <SectionCard
+      icon={<PhoneIncoming className="size-5" />}
+      tint="bg-primary/10 text-primary"
+      title="Simular una llamada"
+      description={`Se evalúa con tus reglas. Hora en ${DEFAULT_PROFILE.timezone}.`}
+    >
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/50 px-3 py-2.5">
+        <Label htmlFor="sim-anon" className="text-sm font-medium">
+          Número oculto / anónimo
+        </Label>
+        <Switch id="sim-anon" checked={anonymous} onCheckedChange={setAnonymous} />
+      </div>
 
-        {!anonymous ? (
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="sim-number">Número del emisor</Label>
-            <Input
-              id="sim-number"
-              value={number}
-              className="max-w-xs"
-              onChange={(e) => setNumber(e.target.value)}
-            />
-          </div>
-        ) : null}
-
+      {!anonymous ? (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="sim-when">Fecha y hora</Label>
+          <Label htmlFor="sim-number" className="text-xs uppercase tracking-wide text-muted-foreground">
+            Número del emisor
+          </Label>
           <Input
-            id="sim-when"
-            type="datetime-local"
-            value={when}
-            className="max-w-xs"
-            onChange={(e) => setWhen(e.target.value)}
+            id="sim-number"
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
           />
         </div>
+      ) : null}
 
-        <div>
-          <Button type="button" onClick={run} disabled={!rulesReady}>
-            Evaluar llamada
-          </Button>
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="sim-when" className="text-xs uppercase tracking-wide text-muted-foreground">
+          Fecha y hora
+        </Label>
+        <Input
+          id="sim-when"
+          type="datetime-local"
+          value={when}
+          onChange={(e) => setWhen(e.target.value)}
+        />
+      </div>
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        {result ? <DecisionResult result={result} /> : null}
-      </CardContent>
-    </Card>
+      <Button type="button" onClick={run} disabled={!rulesReady} className="w-full">
+        Evaluar llamada
+      </Button>
+
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {result ? (
+        <ResultBanner result={result} />
+      ) : (
+        <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+          Configura una llamada y pulsa «Evaluar» para ver la decisión.
+        </p>
+      )}
+    </SectionCard>
   );
 }
 
@@ -177,45 +194,54 @@ function SpecEvaluateScenarios() {
     [],
   );
 
+  const allPass = computed.every((c) => c.matches);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Ejemplos de la spec — evaluación de reglas</CardTitle>
-        <CardDescription>
-          Cada escenario corre con su propia configuración y se compara con el
-          resultado esperado documentado en la spec.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {computed.map(({ scenario, result, matches }) => (
+    <SectionCard
+      icon={<PhoneIncoming className="size-5" />}
+      tint="bg-accent/50 text-accent-foreground"
+      title="Ejemplos de la spec — evaluación"
+      description="Cada caso corre con su configuración y se compara con lo esperado."
+      action={
+        <Badge variant={allPass ? "success" : "destructive"}>
+          {allPass ? "Todos coinciden" : "Revisar"}
+        </Badge>
+      }
+    >
+      {computed.map(({ scenario, result, matches }) => {
+        const answered = result.decision === "answer";
+        return (
           <div
             key={scenario.id}
-            className="flex flex-col gap-3 rounded-lg border border-border bg-background p-4"
+            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2.5"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <span className="font-semibold">{scenario.title}</span>
-                <span className="text-sm text-muted-foreground">
-                  {scenario.description}
-                </span>
-              </div>
-              <Badge variant={matches ? "success" : "destructive"}>
-                {matches ? (
-                  <>
-                    <Check className="size-3.5" /> Coincide
-                  </>
-                ) : (
-                  <>
-                    <X className="size-3.5" /> Difiere
-                  </>
-                )}
-              </Badge>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="truncate text-sm font-semibold">{scenario.title}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {matchedRuleLabel[result.matchedRule] ?? result.matchedRule}
+                {result.rejectAction
+                  ? ` · ${rejectActionLabel[result.rejectAction]}`
+                  : ""}
+              </span>
             </div>
-            <DecisionResult result={result} />
+            <div className="flex shrink-0 items-center gap-2">
+              <Badge variant={answered ? "success" : "destructive"}>
+                {decisionLabel[result.decision]}
+              </Badge>
+              <span
+                className={cn(
+                  "flex size-6 items-center justify-center rounded-full text-background",
+                  matches ? "bg-success" : "bg-destructive",
+                )}
+                aria-label={matches ? "Coincide con la spec" : "Difiere de la spec"}
+              >
+                {matches ? <Check className="size-3.5" /> : <X className="size-3.5" />}
+              </span>
+            </div>
           </div>
-        ))}
-      </CardContent>
-    </Card>
+        );
+      })}
+    </SectionCard>
   );
 }
 
@@ -230,32 +256,28 @@ function SilenceScenarios() {
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Ejemplos de la spec — silencio inicial</CardTitle>
-        <CardDescription>
-          Desenlace de una llamada ya atendida según lo que ocurre en los primeros
-          5 segundos tras el saludo del agente.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {computed.map(({ scenario, result }) => (
-          <div
-            key={scenario.id}
-            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-4"
-          >
-            <div className="flex flex-col gap-1">
-              <span className="font-semibold">{scenario.title}</span>
-              <span className="text-sm text-muted-foreground">
-                {scenario.description}
-              </span>
-            </div>
-            <Badge variant={outcomeVariant[result.outcome]}>
-              {outcomeLabel[result.outcome]}
-            </Badge>
+    <SectionCard
+      icon={<Volume2 className="size-5" />}
+      tint="bg-warning/15 text-warning"
+      title="Ejemplos de la spec — silencio inicial"
+      description="Desenlace según los primeros 5 s tras el saludo del agente."
+    >
+      {computed.map(({ scenario, result }) => (
+        <div
+          key={scenario.id}
+          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2.5"
+        >
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate text-sm font-semibold">{scenario.title}</span>
+            <span className="truncate text-xs text-muted-foreground">
+              {scenario.description}
+            </span>
           </div>
-        ))}
-      </CardContent>
-    </Card>
+          <Badge variant={outcomeVariant[result.outcome]}>
+            {outcomeLabel[result.outcome]}
+          </Badge>
+        </div>
+      ))}
+    </SectionCard>
   );
 }

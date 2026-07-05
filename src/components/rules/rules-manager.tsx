@@ -1,30 +1,40 @@
 "use client";
 
 // UI de configuración de reglas de contestación. spec: US-003.
-import { Plus, ShieldAlert, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  Ban,
+  Clock,
+  EyeOff,
+  PhoneOff,
+  Plus,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { useAnsweringRules } from "@/hooks/use-answering-rules";
-import { effectiveAnonymousAction, effectiveRejectAction, effectiveSchedule } from "@/lib/rules/config";
+import {
+  effectiveAnonymousAction,
+  effectiveRejectAction,
+  effectiveSchedule,
+} from "@/lib/rules/config";
 import { DEFAULT_PROFILE } from "@/lib/rules/defaults";
 import { normalizeToE164 } from "@/lib/rules/phone";
-import { rejectActionLabel } from "@/lib/rules/labels";
 import type { AnsweringRule } from "@/lib/rules/types";
 import { routes } from "@/lib/routes";
+import { GhostLineMark } from "@/components/brand/ghostline-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Segmented } from "@/components/rules/segmented";
+import { SectionCard, StatChip } from "@/components/rules/ui";
+
+const rejectShort = { busy: "Ocupado", hangup: "Colgar", message: "Mensaje" } as const;
 
 export function RulesManager() {
   const {
@@ -39,9 +49,7 @@ export function RulesManager() {
   } = useAnsweringRules();
 
   if (status === "loading") {
-    return (
-      <p className="text-sm text-muted-foreground">Cargando reglas…</p>
-    );
+    return <p className="text-sm text-muted-foreground">Cargando reglas…</p>;
   }
 
   const whitelist = rules.filter((r) => r.ruleType === "whitelist");
@@ -51,155 +59,239 @@ export function RulesManager() {
   const anonymousAction = effectiveAnonymousAction(rules);
   const rejectAction = effectiveRejectAction(rules);
 
+  const scheduleValue =
+    schedule.start === schedule.end ? "24/7" : `${schedule.start}–${schedule.end}`;
+
   return (
-    <div className="flex flex-col gap-6">
-      <ModeBanner mode={mode} error={error} />
+    <div className="flex flex-col gap-5">
+      {mode === "demo" ? <ModeBanner error={error} /> : null}
 
-      <NumberListSection
-        title="Lista blanca"
-        description="Números que siempre se atienden."
-        icon={<ShieldCheck className="size-5" />}
-        rules={whitelist}
-        opposite={blacklist}
-        oppositeName="lista negra"
-        onAdd={(number) => addRule("whitelist", { number })}
-        onToggle={(id, isActive) => updateRule(id, { isActive })}
-        onRemove={removeRule}
-      />
+      {/* Resumen — estado de un vistazo, aprovechando la paleta semántica */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+        <StatChip
+          icon={<Clock className="size-4" />}
+          tint="bg-accent/50 text-accent-foreground"
+          label="Horario"
+          value={scheduleValue}
+        />
+        <StatChip
+          icon={<EyeOff className="size-4" />}
+          tint="bg-secondary text-secondary-foreground"
+          label="Anónimos"
+          value={anonymousAction === "reject" ? "Rechazar" : "Atender"}
+        />
+        <StatChip
+          icon={<PhoneOff className="size-4" />}
+          tint="bg-primary/10 text-primary"
+          label="Al rechazar"
+          value={rejectShort[rejectAction]}
+        />
+        <StatChip
+          icon={<ShieldCheck className="size-4" />}
+          tint="bg-success/15 text-success"
+          label="Lista blanca"
+          value={`${whitelist.filter((r) => r.isActive).length} números`}
+        />
+        <StatChip
+          icon={<ShieldAlert className="size-4" />}
+          tint="bg-destructive/10 text-destructive"
+          label="Lista negra"
+          value={`${blacklist.filter((r) => r.isActive).length} números`}
+        />
+      </div>
 
-      <NumberListSection
-        title="Lista negra"
-        description="Números que siempre se rechazan."
-        icon={<ShieldAlert className="size-5" />}
-        rules={blacklist}
-        opposite={whitelist}
-        oppositeName="lista blanca"
-        onAdd={(number) => addRule("blacklist", { number })}
-        onToggle={(id, isActive) => updateRule(id, { isActive })}
-        onRemove={removeRule}
-      />
-
-      <PrefixListSection
-        rules={prefixes}
-        onAdd={(prefix) => addRule("prefix_block", { prefix })}
-        onToggle={(id, isActive) => updateRule(id, { isActive })}
-        onRemove={removeRule}
-      />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Horario de atención</CardTitle>
-          <CardDescription>
-            Fuera de este rango (hora de {DEFAULT_PROFILE.timezone}) las llamadas se
-            rechazan. Deja inicio y fin iguales para atender 24/7.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="schedule-start">Inicio</Label>
-            <Input
-              id="schedule-start"
-              type="time"
-              value={schedule.start}
-              className="w-36"
-              onChange={(e) =>
-                setSingleton("schedule", { start: e.target.value, end: schedule.end })
-              }
-            />
+      {/* Comportamiento — panel único con los tres ajustes globales */}
+      <SectionCard
+        icon={<Clock className="size-5" />}
+        tint="bg-accent/50 text-accent-foreground"
+        title="Comportamiento"
+        description="Cómo responde tu línea de forma general."
+      >
+        <div className="grid gap-5 md:grid-cols-3 md:divide-x md:divide-border">
+          <div className="flex flex-col gap-2 md:pr-5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              Horario de atención
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="time"
+                aria-label="Hora de inicio"
+                value={schedule.start}
+                className="w-28"
+                onChange={(e) =>
+                  setSingleton("schedule", { start: e.target.value, end: schedule.end })
+                }
+              />
+              <span className="text-muted-foreground">–</span>
+              <Input
+                type="time"
+                aria-label="Hora de fin"
+                value={schedule.end}
+                className="w-28"
+                onChange={(e) =>
+                  setSingleton("schedule", { start: schedule.start, end: e.target.value })
+                }
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {schedule.start === schedule.end
+                ? "Atendiendo 24/7 (inicio y fin iguales)."
+                : `Zona: ${DEFAULT_PROFILE.timezone}.`}
+            </p>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="schedule-end">Fin</Label>
-            <Input
-              id="schedule-end"
-              type="time"
-              value={schedule.end}
-              className="w-36"
-              onChange={(e) =>
-                setSingleton("schedule", { start: schedule.start, end: e.target.value })
-              }
+
+          <div className="flex flex-col gap-2 md:px-5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              Llamadas anónimas
+            </Label>
+            <Segmented
+              aria-label="Acción para llamadas anónimas"
+              value={anonymousAction}
+              onChange={(action) => setSingleton("anonymous", { action })}
+              options={[
+                { value: "reject", label: "Rechazar" },
+                { value: "answer", label: "Atender" },
+              ]}
             />
+            <p className="text-xs text-muted-foreground">
+              Qué hacer cuando el número viene oculto.
+            </p>
           </div>
-          {schedule.start === schedule.end ? (
-            <Badge variant="success">24/7</Badge>
-          ) : null}
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Llamadas anónimas / ocultas</CardTitle>
-          <CardDescription>
-            Qué hacer cuando el número del emisor viene oculto.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Segmented
-            aria-label="Acción para llamadas anónimas"
-            value={anonymousAction}
-            onChange={(action) => setSingleton("anonymous", { action })}
-            options={[
-              { value: "reject", label: "Rechazar" },
-              { value: "answer", label: "Atender" },
-            ]}
-          />
-        </CardContent>
-      </Card>
+          <div className="flex flex-col gap-2 md:pl-5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              Acción de rechazo
+            </Label>
+            <Segmented
+              aria-label="Acción de rechazo"
+              value={rejectAction}
+              onChange={(action) => setSingleton("reject_action", { action })}
+              options={[
+                { value: "busy", label: "Ocupado" },
+                { value: "hangup", label: "Colgar" },
+                { value: "message", label: "Mensaje" },
+              ]}
+            />
+            <p className="text-xs text-muted-foreground">
+              Cómo se corta una llamada bloqueada.
+            </p>
+          </div>
+        </div>
+      </SectionCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Acción de rechazo</CardTitle>
-          <CardDescription>
-            Cómo se rechaza una llamada que no pasa las reglas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Segmented
-            aria-label="Acción de rechazo"
-            value={rejectAction}
-            onChange={(action) => setSingleton("reject_action", { action })}
-            options={[
-              { value: "busy", label: rejectActionLabel.busy },
-              { value: "hangup", label: rejectActionLabel.hangup },
-              { value: "message", label: rejectActionLabel.message },
-            ]}
-          />
-        </CardContent>
-      </Card>
+      {/* Listas — lado a lado */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ListEditor
+          icon={<ShieldCheck className="size-5" />}
+          tint="bg-success/15 text-success"
+          title="Lista blanca"
+          description="Siempre se atienden."
+          placeholder="Ej. 7777-7777 o +50377777777"
+          items={toItems(whitelist, "number")}
+          onAdd={(raw) => addNumber(raw, whitelist, blacklist, "la lista negra", (n) => addRule("whitelist", { number: n }))}
+          onToggle={(id, v) => updateRule(id, { isActive: v })}
+          onRemove={removeRule}
+          emptyText="Sin números en la lista blanca."
+        />
+        <ListEditor
+          icon={<ShieldAlert className="size-5" />}
+          tint="bg-destructive/10 text-destructive"
+          title="Lista negra"
+          description="Siempre se rechazan."
+          placeholder="Ej. 7777-7777 o +50377777777"
+          items={toItems(blacklist, "number")}
+          onAdd={(raw) => addNumber(raw, blacklist, whitelist, "la lista blanca", (n) => addRule("blacklist", { number: n }))}
+          onToggle={(id, v) => updateRule(id, { isActive: v })}
+          onRemove={removeRule}
+          emptyText="Sin números en la lista negra."
+        />
+      </div>
 
-      <Card className="bg-secondary">
-        <CardHeader>
-          <CardTitle>¿Cómo se comportarían tus reglas?</CardTitle>
-          <CardDescription>
-            Prueba distintos escenarios de llamada entrante y mira la decisión sin
-            necesidad de recibir una llamada real.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild>
-            <Link href={routes.rulesSimulator}>Abrir simulador</Link>
+      {/* Prefijos + CTA al simulador */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ListEditor
+          icon={<Ban className="size-5" />}
+          tint="bg-warning/15 text-warning"
+          title="Prefijos bloqueados"
+          description="Bloquea rangos por país o área."
+          placeholder="Ej. +1800"
+          items={toItems(prefixes, "prefix")}
+          onAdd={(raw) => addPrefix(raw, prefixes, (p) => addRule("prefix_block", { prefix: p }))}
+          onToggle={(id, v) => updateRule(id, { isActive: v })}
+          onRemove={removeRule}
+          emptyText="Sin prefijos bloqueados."
+        />
+
+        <div className="relative flex flex-col justify-between gap-4 overflow-hidden rounded-xl bg-hero p-5 text-hero-foreground">
+          <GhostLineMark className="absolute -right-6 -top-6 size-32 opacity-10" inverted />
+          <div className="relative flex flex-col gap-1.5">
+            <h3 className="font-display text-lg font-bold">Pruébalo antes de una llamada real</h3>
+            <p className="text-sm text-hero-foreground/80">
+              Simula distintos escenarios y mira la decisión que tomarían tus reglas,
+              sin esperar a que suene el teléfono.
+            </p>
+          </div>
+          <Button
+            asChild
+            variant="secondary"
+            className="relative w-fit border-transparent bg-hero-foreground text-hero hover:bg-hero-foreground/90"
+          >
+            <Link href={routes.rulesSimulator}>
+              Abrir simulador <ArrowRight className="size-4" />
+            </Link>
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
-function ModeBanner({
-  mode,
-  error,
-}: {
-  mode: "persistent" | "demo";
-  error: string | null;
-}) {
-  if (mode === "persistent") {
-    return (
-      <div className="rounded-lg border border-border bg-card p-3 text-sm text-muted-foreground">
-        Tus cambios se guardan en tu cuenta y aplican a la siguiente llamada.
-      </div>
-    );
+// --- helpers de validación (spec: normalización E.164 y conflicto de listas) ---
+
+function toItems(rules: AnsweringRule[], key: "number" | "prefix") {
+  return rules.map((r) => ({
+    id: r.id,
+    label: key in r.value ? (r.value as Record<string, string>)[key] : "",
+    isActive: r.isActive,
+  }));
+}
+
+async function addNumber(
+  raw: string,
+  same: AnsweringRule[],
+  opposite: AnsweringRule[],
+  oppositeName: string,
+  insert: (n: string) => Promise<unknown>,
+): Promise<string | null> {
+  const normalized = normalizeToE164(raw, DEFAULT_PROFILE.countryCode);
+  if (!normalized) return "Número inválido. Usa formato local o +503…";
+  if (opposite.some((r) => r.isActive && "number" in r.value && r.value.number === normalized)) {
+    return `Este número ya está en ${oppositeName}.`;
   }
+  if (same.some((r) => "number" in r.value && r.value.number === normalized)) {
+    return "Este número ya está en esta lista.";
+  }
+  await insert(normalized);
+  return null;
+}
+
+async function addPrefix(
+  raw: string,
+  prefixes: AnsweringRule[],
+  insert: (p: string) => Promise<unknown>,
+): Promise<string | null> {
+  const prefix = raw.trim();
+  if (!/^\+[0-9]{1,6}$/.test(prefix)) return "Prefijo inválido. Usa formato como +1800.";
+  if (prefixes.some((r) => "prefix" in r.value && r.value.prefix === prefix)) {
+    return "Ese prefijo ya está bloqueado.";
+  }
+  await insert(prefix);
+  return null;
+}
+
+function ModeBanner({ error }: { error: string | null }) {
   return (
-    <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
+    <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm text-foreground">
       <span className="font-semibold">Modo demo.</span>{" "}
       {error
         ? "No se pudieron cargar tus reglas guardadas; los cambios no se persisten."
@@ -209,204 +301,110 @@ function ModeBanner({
   );
 }
 
-function NumberListSection({
+type ListItem = { id: string; label: string; isActive: boolean };
+
+function ListEditor({
+  icon,
+  tint,
   title,
   description,
-  icon,
-  rules,
-  opposite,
-  oppositeName,
+  placeholder,
+  items,
   onAdd,
   onToggle,
   onRemove,
+  emptyText,
 }: {
+  icon: React.ReactNode;
+  tint: string;
   title: string;
   description: string;
-  icon: React.ReactNode;
-  rules: AnsweringRule[];
-  opposite: AnsweringRule[];
-  oppositeName: string;
-  onAdd: (number: string) => Promise<unknown>;
+  placeholder: string;
+  items: ListItem[];
+  onAdd: (raw: string) => Promise<string | null>;
   onToggle: (id: string, isActive: boolean) => void;
   onRemove: (id: string) => void;
+  emptyText: string;
 }) {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function handleAdd() {
+    const err = await onAdd(input);
+    if (err) {
+      setError(err);
+      return;
+    }
     setError(null);
-    const normalized = normalizeToE164(input, DEFAULT_PROFILE.countryCode);
-    if (!normalized) {
-      setError("Número inválido. Usa formato local o internacional (+503…).");
-      return;
-    }
-    // spec: no puede estar en la lista opuesta activa.
-    if (opposite.some((r) => r.isActive && "number" in r.value && r.value.number === normalized)) {
-      setError(`Este número ya está en la ${oppositeName}.`);
-      return;
-    }
-    if (rules.some((r) => "number" in r.value && r.value.number === normalized)) {
-      setError("Este número ya está en esta lista.");
-      return;
-    }
-    await onAdd(normalized);
     setInput("");
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2 text-primary">{icon}</div>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-2">
-          <Input
-            value={input}
-            placeholder="Ej. 7777-7777 o +50377777777"
-            className="max-w-xs"
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void handleAdd();
-              }
-            }}
-          />
-          <Button type="button" variant="secondary" onClick={() => void handleAdd()}>
-            <Plus className="size-4" /> Agregar
-          </Button>
-        </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+    <SectionCard
+      icon={icon}
+      tint={tint}
+      title={title}
+      description={description}
+      action={<Badge variant="outline">{items.length}</Badge>}
+    >
+      <div className="flex gap-2">
+        <Input
+          value={input}
+          placeholder={placeholder}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void handleAdd();
+            }
+          }}
+        />
+        <Button type="button" variant="secondary" size="icon" onClick={() => void handleAdd()} aria-label="Agregar">
+          <Plus className="size-4" />
+        </Button>
+      </div>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        {rules.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sin números en esta lista.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {rules.map((rule) => (
-              <li
-                key={rule.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-3"
-              >
-                <span className="font-medium">
-                  {"number" in rule.value ? rule.value.number : ""}
-                </span>
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={rule.isActive}
-                    onCheckedChange={(v) => onToggle(rule.id, v)}
-                    aria-label={rule.isActive ? "Desactivar regla" : "Activar regla"}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemove(rule.id)}
-                    aria-label="Eliminar número"
-                  >
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+      {items.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+          {emptyText}
+        </p>
+      ) : (
+        <ul className="flex max-h-56 flex-col gap-1.5 overflow-y-auto pr-1">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className={cnRow(item.isActive)}
+            >
+              <span className="truncate font-medium">{item.label}</span>
+              <div className="flex shrink-0 items-center gap-2">
+                <Switch
+                  checked={item.isActive}
+                  onCheckedChange={(v) => onToggle(item.id, v)}
+                  aria-label={item.isActive ? "Desactivar" : "Activar"}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={() => onRemove(item.id)}
+                  aria-label="Eliminar"
+                >
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </SectionCard>
   );
 }
 
-function PrefixListSection({
-  rules,
-  onAdd,
-  onToggle,
-  onRemove,
-}: {
-  rules: AnsweringRule[];
-  onAdd: (prefix: string) => Promise<unknown>;
-  onToggle: (id: string, isActive: boolean) => void;
-  onRemove: (id: string) => void;
-}) {
-  const [input, setInput] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleAdd() {
-    setError(null);
-    const prefix = input.trim();
-    if (!/^\+[0-9]{1,6}$/.test(prefix)) {
-      setError("Prefijo inválido. Usa formato como +1800 o +503.");
-      return;
-    }
-    if (rules.some((r) => "prefix" in r.value && r.value.prefix === prefix)) {
-      setError("Ese prefijo ya está bloqueado.");
-      return;
-    }
-    await onAdd(prefix);
-    setInput("");
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Prefijos bloqueados</CardTitle>
-        <CardDescription>
-          Bloquea rangos por país o área (ej. +1800, +503).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-2">
-          <Input
-            value={input}
-            placeholder="Ej. +1800"
-            className="max-w-xs"
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void handleAdd();
-              }
-            }}
-          />
-          <Button type="button" variant="secondary" onClick={() => void handleAdd()}>
-            <Plus className="size-4" /> Agregar
-          </Button>
-        </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-        {rules.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sin prefijos bloqueados.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {rules.map((rule) => (
-              <li
-                key={rule.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-3"
-              >
-                <span className="font-medium">
-                  {"prefix" in rule.value ? rule.value.prefix : ""}
-                </span>
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={rule.isActive}
-                    onCheckedChange={(v) => onToggle(rule.id, v)}
-                    aria-label={rule.isActive ? "Desactivar regla" : "Activar regla"}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemove(rule.id)}
-                    aria-label="Eliminar prefijo"
-                  >
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
+function cnRow(isActive: boolean) {
+  return [
+    "flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 text-sm transition-opacity",
+    isActive ? "" : "opacity-55",
+  ].join(" ");
 }

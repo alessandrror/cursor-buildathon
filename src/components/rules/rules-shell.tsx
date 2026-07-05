@@ -18,30 +18,32 @@ export function RulesShell({
 }) {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
           <Link href={routes.dashboard} aria-label="Ir al dashboard">
             <GhostLineLogo markClassName="size-8" />
           </Link>
+
+          <nav className="flex items-center gap-1 rounded-full border border-border bg-muted p-1">
+            <TabLink href={routes.rules} isActive={active === "config"}>
+              Configuración
+            </TabLink>
+            <TabLink href={routes.rulesSimulator} isActive={active === "simulator"}>
+              Simulador
+            </TabLink>
+          </nav>
+
           <ThemeToggle />
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8">
-        <div className="flex flex-col gap-2">
-          <h1 className="font-display text-3xl font-black leading-tight">{title}</h1>
-          <p className="text-muted-foreground">{description}</p>
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-display text-2xl font-black leading-tight md:text-3xl">
+            {title}
+          </h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
         </div>
-
-        <nav className="flex gap-2">
-          <TabLink href={routes.rules} isActive={active === "config"}>
-            Configuración
-          </TabLink>
-          <TabLink href={routes.rulesSimulator} isActive={active === "simulator"}>
-            Simulador
-          </TabLink>
-        </nav>
-
         {children}
       </div>
     </main>
@@ -62,10 +64,10 @@ function TabLink({
       href={href}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+        "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
         isActive
-          ? "bg-primary text-primary-foreground"
-          : "bg-muted text-muted-foreground hover:text-foreground",
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground",
       )}
     >
       {children}

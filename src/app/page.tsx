@@ -16,6 +16,7 @@ import {
 
 import {
   AuthControls,
+  ClerkAccountCta,
   ClerkSignInButton,
   ClerkSignUpButton,
 } from "@/components/layout/auth-controls";
@@ -324,10 +325,15 @@ export default function HomePage() {
                 resúmenes generados después de cada conversación.
               </p>
               <div>
-                <ClerkSignUpButton size="lg" variant="secondary">
+                <ClerkAccountCta
+                  size="lg"
+                  variant="secondary"
+                  signedInLabel="Ir al dashboard"
+                  signedInClassName="border border-transparent bg-hero-foreground text-hero shadow-sm hover:bg-hero-foreground/90"
+                >
                   Crear mi cuenta
                   <Sparkles data-icon="inline-end" />
-                </ClerkSignUpButton>
+                </ClerkAccountCta>
               </div>
             </div>
 

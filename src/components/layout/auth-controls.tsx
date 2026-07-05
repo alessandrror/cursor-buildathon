@@ -75,6 +75,39 @@ export function ClerkSignUpButton({
   );
 }
 
+type ClerkAccountCtaProps = Omit<ClerkAuthLinkProps, "href"> & {
+  signedInLabel?: string;
+  signedInClassName?: string;
+};
+
+export function ClerkAccountCta({
+  signedInLabel = "Ir al dashboard",
+  signedInClassName,
+  className,
+  children,
+  ...props
+}: ClerkAccountCtaProps) {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (isLoaded && isSignedIn) {
+    return (
+      <ClerkAuthLink
+        href={routes.dashboard}
+        className={cn(className, signedInClassName)}
+        {...props}
+      >
+        {signedInLabel}
+      </ClerkAuthLink>
+    );
+  }
+
+  return (
+    <ClerkAuthLink href={routes.signUp} className={className} {...props}>
+      {children}
+    </ClerkAuthLink>
+  );
+}
+
 type AuthControlsProps = {
   signInVariant?: ButtonVariantProps["variant"];
   signUpVariant?: ButtonVariantProps["variant"];

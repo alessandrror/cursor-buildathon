@@ -1,3 +1,5 @@
+import { currentUser } from "@clerk/nextjs/server";
+import { AgentWidget } from "@/components/agent/agent-widget";
 import { CallListItemCard } from "@/components/dashboard/call-list-item";
 import { CallMetricsGrid } from "@/components/dashboard/call-metrics";
 import { CallsEmptyState } from "@/components/dashboard/calls-empty-state";
@@ -9,6 +11,10 @@ import {
 import { computeCallMetrics } from "@/lib/calls/presentation";
 
 export default async function DashboardPage() {
+  const user = await currentUser();
+  const ownerName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "el propietario";
+
   const useMock = isMockCallsEnabled();
   let calls: Awaited<ReturnType<typeof getCallsForDashboard>> = [];
 
@@ -72,6 +78,8 @@ export default async function DashboardPage() {
           </ul>
         )}
       </section>
+
+      <AgentWidget ownerName={ownerName} />
     </div>
   );
 }

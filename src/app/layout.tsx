@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import { SyncClerkUser } from "@/components/auth/sync-clerk-user";
+import { syncClerkUserToSupabase } from "@/lib/supabase/sync-clerk-user";
 
 import "./globals.css";
 
@@ -20,17 +24,26 @@ export const metadata: Metadata = {
     "Recibe llamadas, filtra conversaciones y obtén resúmenes automáticos usando inteligencia artificial.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { userId } = await auth();
+
+  if (userId) {
+    await syncClerkUserToSupabase();
+  }
+
   return (
     <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ClerkProvider>{children}</ClerkProvider>
+        <ClerkProvider>
+          <SyncClerkUser />
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );

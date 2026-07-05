@@ -11,7 +11,8 @@
     "env:setup": "cp .env.example .env.local",
     "clerk:login": "bunx clerk auth login",
     "clerk:init": "bunx clerk init --app app_3G3kypE1PlLZ2ATrTEnhXONzf1U",
-    "clerk:doctor": "bunx clerk doctor"
+    "clerk:doctor": "bunx clerk doctor",
+    "db:migrate": "bun run scripts/migrate.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",
@@ -30,6 +31,7 @@
     "clerk": "1.5.0",
     "eslint": "^9.39.3",
     "eslint-config-next": "^16.2.10",
+    "postgres": "^3.4.9",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3"
   }

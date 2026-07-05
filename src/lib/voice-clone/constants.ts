@@ -6,18 +6,8 @@ export const VOICE_CONSENT_VERSION = "2026-07-05-v1";
 export const VOICE_SAMPLE_MIN_COUNT = VOICE_PHRASE_COUNT;
 export const VOICE_SAMPLE_MAX_COUNT = VOICE_PHRASE_COUNT;
 export const VOICE_SAMPLE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
-<<<<<<< HEAD
-<<<<<<< HEAD
 /** ~5 s por frase × 3 ≈ 15 s total (mínimo práctico; calidad del clon puede variar). */
 export const VOICE_SAMPLE_MIN_DURATION_MS = 5_000;
-=======
-/** ~12 s por frase × 3 ≈ 36 s mínimo (ElevenLabs acepta desde ~30 s total). */
-export const VOICE_SAMPLE_MIN_DURATION_MS = 12_000;
->>>>>>> 8a53055 (Enhance voice cloning features and onboarding process)
-=======
-/** ~5 s por frase × 3 ≈ 15 s total (mínimo práctico; calidad del clon puede variar). */
-export const VOICE_SAMPLE_MIN_DURATION_MS = 5_000;
->>>>>>> 555a6a5 (Add answering rules management and validation features)
 export const VOICE_SAMPLE_MIN_BYTES = 8_000;
 
 export const VOICE_ALLOWED_MIME_TYPES = [

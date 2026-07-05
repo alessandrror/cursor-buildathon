@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { getMockCallById, mockCalls } from "@/lib/mock-data";
 import { getCallById, getCallsForCurrentUser } from "@/lib/supabase/calls";
 import type { CallDetail, CallListItem } from "@/types/call";
@@ -29,11 +28,5 @@ export async function getCallDetailForDashboard(
   return getCallById(id);
 }
 
-=======
-export {
-  getCallById as getCallDetailForDashboard,
-  getCallsForCurrentUser as getCallsForDashboard,
-} from "@/lib/supabase/calls";
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 export { getAnsweringRulesForCurrentUser as getAnsweringRulesForDashboard } from "@/lib/supabase/answering-rules";
 export { getActivePhoneNumberForCurrentUser as getGhostLineNumberForDashboard } from "@/lib/supabase/phone-numbers";

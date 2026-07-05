@@ -2,15 +2,7 @@ import type { AnsweringRuleType, DbAnsweringRule } from "@/types/database";
 import { getClerkScopedSupabase } from "@/lib/supabase/clerk-scoped-server";
 
 export type RuleListItem = {
-<<<<<<< HEAD
-<<<<<<< HEAD
   id?: string;
-=======
-  id: string;
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
-=======
-  id?: string;
->>>>>>> 555a6a5 (Add answering rules management and validation features)
   value: string;
   active: boolean;
 };
@@ -27,15 +19,7 @@ export type AnsweringRulesConfig = {
   prefixBlock: RuleListItem[];
 };
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 export const defaultRulesConfig: AnsweringRulesConfig = {
-=======
-const defaultRulesConfig: AnsweringRulesConfig = {
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
-=======
-export const defaultRulesConfig: AnsweringRulesConfig = {
->>>>>>> 555a6a5 (Add answering rules management and validation features)
   schedule: {
     start: "08:00",
     end: "20:00",
@@ -135,10 +119,6 @@ export async function getAnsweringRulesForCurrentUser(): Promise<AnsweringRulesC
 
   return normalizeRules((data ?? []) as DbAnsweringRule[]);
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 555a6a5 (Add answering rules management and validation features)
 
 async function getUserCountryCode(
   userId: string,
@@ -263,8 +243,3 @@ export async function getCountryCodeForCurrentUser(): Promise<string> {
 
   return getUserCountryCode(userId, supabase, useUserFilter);
 }
-<<<<<<< HEAD
-=======
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
-=======
->>>>>>> 555a6a5 (Add answering rules management and validation features)

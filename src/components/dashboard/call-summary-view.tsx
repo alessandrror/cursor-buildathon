@@ -2,10 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Ban, Flag, ShieldCheck, UserRoundCheck } from "lucide-react";
 
 import { CallTranscript } from "@/components/dashboard/call-transcript";
-<<<<<<< HEAD
 import { MockDataBanner } from "@/components/dashboard/mock-data-banner";
-=======
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,10 +20,7 @@ import type { CallDetail } from "@/types/call";
 
 type CallSummaryViewProps = {
   call: CallDetail;
-<<<<<<< HEAD
   showMockBanner?: boolean;
-=======
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
 };
 
 function getStatusLabel(call: CallDetail) {
@@ -86,11 +80,7 @@ function getSummaryReason(call: CallDetail) {
   return call.reason ?? call.summary ?? getOutcomeMeta(call.outcome).description;
 }
 
-<<<<<<< HEAD
 export function CallSummaryView({ call, showMockBanner }: CallSummaryViewProps) {
-=======
-export function CallSummaryView({ call }: CallSummaryViewProps) {
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
   const outcome = getOutcomeMeta(call.outcome);
   const OutcomeIcon = outcome.icon;
   const category = call.category ? getCategoryMeta(call.category) : null;
@@ -106,11 +96,8 @@ export function CallSummaryView({ call }: CallSummaryViewProps) {
         </Link>
       </Button>
 
-<<<<<<< HEAD
       {showMockBanner && <MockDataBanner />}
 
-=======
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
       <Card className="gap-0 py-0 shadow-none">
         <CardContent className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-4">

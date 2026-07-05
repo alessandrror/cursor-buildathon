@@ -17,13 +17,6 @@ type DashboardShellProps = {
 const navItems = [
   { href: routes.dashboard, label: "Panel", id: "calls" as const },
   { href: routes.dashboardRules, label: "Reglas", id: "settings" as const },
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-  { href: routes.dashboardSimulator, label: "Simulador", id: "simulator" as const },
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
-=======
->>>>>>> 555a6a5 (Add answering rules management and validation features)
 ];
 
 export function DashboardShell({
@@ -31,17 +24,7 @@ export function DashboardShell({
   activeNav = "calls",
 }: DashboardShellProps) {
   const pathname = usePathname();
-<<<<<<< HEAD
-<<<<<<< HEAD
   const currentNav = pathname.startsWith(routes.dashboardRules)
-=======
-  const currentNav = pathname.startsWith(routes.dashboardSimulator)
-    ? "simulator"
-    : pathname.startsWith(routes.dashboardRules)
->>>>>>> c9e7822 (Refactor dashboard components and enhance call handling features)
-=======
-  const currentNav = pathname.startsWith(routes.dashboardRules)
->>>>>>> 555a6a5 (Add answering rules management and validation features)
     ? "settings"
     : activeNav;
 

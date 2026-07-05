@@ -124,7 +124,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $json.body.data ?? $json.body;\nreturn [{\n  json: {\n    conversationId: data.conversation_id,\n    agentId: data.agent_id,\n    status: data.status,\n    callSid: data.metadata?.phone_call?.call_sid ?? null,\n    durationSeconds: data.metadata?.call_duration_secs ?? null,\n    transcript: Array.isArray(data.transcript) ? data.transcript : [],\n    summary: data.analysis?.transcript_summary ?? null,\n    callSuccessful: data.analysis?.call_successful ?? null,\n    body: data\n  }\n}];"
+        "jsCode": "const data = $json.body.data ?? $json.body;\nconst dyn = data.conversation_initiation_client_data?.dynamic_variables ?? {};\nconst clerkUserId = dyn.clerk_user_id ?? dyn.user_id ?? data.user_id ?? null;\nreturn [{\n  json: {\n    conversationId: data.conversation_id,\n    agentId: data.agent_id,\n    status: data.status,\n    callSid: data.metadata?.phone_call?.call_sid ?? null,\n    clerkUserId,\n    durationSeconds: data.metadata?.call_duration_secs ?? null,\n    transcript: Array.isArray(data.transcript) ? data.transcript : [],\n    summary: data.analysis?.transcript_summary ?? null,\n    callSuccessful: data.analysis?.call_successful ?? null,\n    body: data\n  }\n}];"
       },
       "id": "extract-fields",
       "name": "Extract Fields",
@@ -324,7 +324,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ event_type: 'orphan_webhook', payload: { source: 'elevenlabs', conversation_id: $('Extract Fields').first().json.conversationId, call_sid: $('Extract Fields').first().json.callSid } }) }}",
+        "body": "={{ JSON.stringify({ event_type: 'orphan_webhook', payload: { source: 'elevenlabs', conversation_id: $('Extract Fields').first().json.conversationId, call_sid: $('Extract Fields').first().json.callSid, clerk_user_id: $('Extract Fields').first().json.clerkUserId } }) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -364,25 +364,88 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "has-clerk-user",
+              "leftValue": "={{ $('Extract Fields').first().json.clerkUserId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        }
+      },
+      "id": "has-clerk-user-id",
+      "name": "Has Clerk User ID?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        520
+      ]
+    },
+    {
+      "parameters": {
         "operation": "getAll",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Extract Fields').first().json.clerkUserId }}",
+              "condition": "eq"
+            }
+          ]
+        },
         "limit": 1,
         "options": {},
         "tableId": "users"
       },
-      "id": "get-webrtc-user",
-      "name": "Get WebRTC User",
+      "id": "lookup-clerk-user",
+      "name": "Lookup Clerk User",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1780,
-        520
+        2000,
+        460
       ],
       "credentials": {
         "supabaseApi": {
           "id": "hOsK6gvSyJWN6HU2",
           "name": "Supabase account"
         }
-      }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "clerk-user-found",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        }
+      },
+      "id": "clerk-user-found-router",
+      "name": "Clerk User Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2220,
+        460
+      ]
     },
     {
       "id": "insert-webrtc-call",
@@ -390,8 +453,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2000,
-        520
+        2440,
+        460
       ],
       "credentials": {
         "supabaseApi": {
@@ -407,7 +470,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ user_id: $('Get WebRTC User').first().json.id, twilio_call_sid: $('Extract Fields').first().json.conversationId, decision: 'answer', started_at: new Date().toISOString() }) }}",
+        "body": "={{ JSON.stringify({ user_id: $('Lookup Clerk User').first().json.id, twilio_call_sid: $('Extract Fields').first().json.conversationId, decision: 'answer', started_at: new Date().toISOString() }) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -670,7 +733,7 @@
         ],
         [
           {
-            "node": "Get WebRTC User",
+            "node": "Has Clerk User ID?",
             "type": "main",
             "index": 0
           }
@@ -717,11 +780,47 @@
         ]
       ]
     },
-    "Get WebRTC User": {
+    "Has Clerk User ID?": {
+      "main": [
+        [
+          {
+            "node": "Lookup Clerk User",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert orphan_webhook event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Clerk User": {
+      "main": [
+        [
+          {
+            "node": "Clerk User Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clerk User Found?": {
       "main": [
         [
           {
             "node": "Insert WebRTC Call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert orphan_webhook event",
             "type": "main",
             "index": 0
           }
@@ -787,5 +886,5 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "active": false
+  "active": true
 }

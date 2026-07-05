@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { AgentWidget } from "@/components/agent/agent-widget";
 import { CallListItemCard } from "@/components/dashboard/call-list-item";
+import { DashboardCallSync } from "@/components/dashboard/dashboard-call-sync";
 import { CallMetricsGrid } from "@/components/dashboard/call-metrics";
 import { CallsEmptyState } from "@/components/dashboard/calls-empty-state";
 import { getCallsForDashboard } from "@/lib/calls/data-source";
@@ -35,6 +36,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      <DashboardCallSync initialCallCount={calls.length} />
       <header className="max-w-3xl">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           Tu actividad
@@ -80,7 +82,9 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      <AgentWidget ownerName={ownerName} />
+      {user?.id ? (
+        <AgentWidget ownerName={ownerName} clerkUserId={user.id} />
+      ) : null}
     </div>
   );
 }

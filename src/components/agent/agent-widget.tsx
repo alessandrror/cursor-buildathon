@@ -1,9 +1,18 @@
 "use client";
-import Script from "next/script";
-import { useEffect, useState } from "react";
 
-export function AgentWidget({ ownerName }: { ownerName: string }) {
+import Script from "next/script";
+import { useEffect, useRef, useState } from "react";
+
+import { dispatchCallCompletedEvent } from "@/lib/calls/events";
+
+type AgentWidgetProps = {
+  ownerName: string;
+  clerkUserId: string;
+};
+
+export function AgentWidget({ ownerName, clerkUserId }: AgentWidgetProps) {
   const [agentId, setAgentId] = useState<string | null>(null);
+  const widgetRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     fetch("/api/agent/signed-url")
@@ -12,14 +21,33 @@ export function AgentWidget({ ownerName }: { ownerName: string }) {
       .catch(console.error);
   }, []);
 
-  if (!agentId) return null;
+  useEffect(() => {
+    const widget = widgetRef.current;
+    if (!widget) return;
+
+    const onConversationEnded = () => {
+      dispatchCallCompletedEvent();
+    };
+
+    widget.addEventListener("conversationEnded", onConversationEnded);
+
+    return () => {
+      widget.removeEventListener("conversationEnded", onConversationEnded);
+    };
+  }, [agentId]);
+
+  if (!agentId || !clerkUserId) return null;
 
   return (
     <>
       {/* @ts-expect-error — web component sin tipos */}
       <elevenlabs-convai
+        ref={widgetRef}
         agent-id={agentId}
-        dynamic-variables={JSON.stringify({ owner_name: ownerName })}
+        dynamic-variables={JSON.stringify({
+          owner_name: ownerName,
+          clerk_user_id: clerkUserId,
+        })}
       />
       <Script
         src="https://unpkg.com/@elevenlabs/convai-widget-embed"

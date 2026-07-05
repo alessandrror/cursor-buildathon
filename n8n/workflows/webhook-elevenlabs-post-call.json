@@ -1,0 +1,400 @@
+{
+  "name": "elevenlabs-post-call",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "elevenlabs/post-call",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-entry",
+      "name": "Webhook — ElevenLabs Post-Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "elevenlabs-post-call"
+    },
+    {
+      "parameters": {
+        "jsCode": "// spec: §Autenticación — Validar HMAC de ElevenLabs\n// Header format: ElevenLabs-Signature: t=<timestamp>,v0=<hex_signature>\n// Signed payload: '<timestamp>.<raw_body>'\nconst crypto = require('crypto');\n\nconst secret = $env['ELEVENLABS_WEBHOOK_SECRET'];\nconst sigHeader = $input.first().headers['elevenlabs-signature'] ?? '';\n\nconst parts = {};\nfor (const part of sigHeader.split(',')) {\n  const [k, v] = part.split('=');\n  parts[k] = v;\n}\n\nconst timestamp = parts['t'];\nconst v0 = parts['v0'];\n\nif (!timestamp || !v0) return [{ json: { valid: false } }];\n\n// Reject if older than 5 minutes\nconst age = Math.abs(Date.now() / 1000 - Number(timestamp));\nif (age > 300) return [{ json: { valid: false } }];\n\n// rawBody: true makes body a string; fall back to re-serialization if needed\nconst rawBody = typeof $input.first().body === 'string'\n  ? $input.first().body\n  : JSON.stringify($input.first().body);\n\nconst expected = crypto\n  .createHmac('sha256', secret)\n  .update(`${timestamp}.${rawBody}`)\n  .digest('hex');\n\n// ponytail: timingSafeEqual over === to prevent timing attacks\nconst valid = crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(v0, 'hex'));\n\nconst body = typeof $input.first().body === 'string'\n  ? JSON.parse($input.first().body)\n  : $input.first().body;\n\nreturn [{ json: { valid, body } }];"
+      },
+      "id": "validate-hmac",
+      "name": "Validate ElevenLabs HMAC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "id": "hmac-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "hmac-router",
+      "name": "HMAC Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_type": "security_alert",
+            "payload": "={{ JSON.stringify({ reason: 'invalid_elevenlabs_hmac', path: '/webhook/elevenlabs/post-call' }) }}"
+          }
+        },
+        "tableId": "system_events"
+      },
+      "id": "insert-security-alert",
+      "name": "Insert security_alert event",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 500],
+      "credentials": {
+        "supabaseApi": { "id": "hOsK6gvSyJWN6HU2", "name": "Supabase account" }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Unauthorized' }) }}",
+        "options": {
+          "responseCode": 401,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      },
+      "id": "respond-401",
+      "name": "Respond 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1120, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// spec: §Validaciones — extraer campos relevantes del payload ElevenLabs\nconst body = $json.body;\nreturn [{\n  json: {\n    conversationId: body.conversation_id,\n    agentId: body.agent_id,\n    status: body.status,\n    callSid: body.metadata?.call_sid ?? null,\n    durationSeconds: body.metadata?.duration_seconds ?? null,\n    transcript: Array.isArray(body.transcript) ? body.transcript : [],\n    body\n  }\n}];"
+      },
+      "id": "extract-fields",
+      "name": "Extract Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "conversation_id",
+              "keyValue": "={{ $json.conversationId }}",
+              "condition": "eq"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {},
+        "tableId": "call_transcripts"
+      },
+      "id": "check-idempotency",
+      "name": "Check Idempotency (call_transcripts)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": { "id": "hOsK6gvSyJWN6HU2", "name": "Supabase account" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-transcript",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ]
+        }
+      },
+      "id": "idempotency-router",
+      "name": "Already Processed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      },
+      "id": "respond-200-idempotent",
+      "name": "Respond 200 Idempotent",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "twilio_call_sid",
+              "keyValue": "={{ $('Extract Fields').first().json.callSid }}",
+              "condition": "eq"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {},
+        "tableId": "calls"
+      },
+      "id": "lookup-call",
+      "name": "Lookup Call by SID",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 380],
+      "credentials": {
+        "supabaseApi": { "id": "hOsK6gvSyJWN6HU2", "name": "Supabase account" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-call",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ]
+        }
+      },
+      "id": "call-found-router",
+      "name": "Call Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1780, 380]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_type": "orphan_webhook",
+            "payload": "={{ JSON.stringify({ source: 'elevenlabs', conversation_id: $('Extract Fields').first().json.conversationId, call_sid: $('Extract Fields').first().json.callSid }) }}"
+          }
+        },
+        "tableId": "system_events"
+      },
+      "id": "insert-orphan",
+      "name": "Insert orphan_webhook event",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2000, 500],
+      "credentials": {
+        "supabaseApi": { "id": "hOsK6gvSyJWN6HU2", "name": "Supabase account" }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      },
+      "id": "respond-200-orphan",
+      "name": "Respond 200 Orphan",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2220, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// spec: §Efectos colaterales — determinar outcome a partir de status y transcript\nconst extracted = $('Extract Fields').first().json;\nconst callRow = $('Lookup Call by SID').first().json;\n\nconst { status, transcript, durationSeconds, conversationId, agentId } = extracted;\n\nlet outcome;\nif (status === 'failed') {\n  outcome = 'agent_error';\n} else if (!transcript || transcript.length === 0) {\n  outcome = 'silent_hangup';\n} else {\n  outcome = 'completed';\n}\n\nreturn [{\n  json: {\n    outcome,\n    durationSeconds: durationSeconds ?? null,\n    endedAt: new Date().toISOString(),\n    callId: callRow.id,\n    userId: callRow.user_id,\n    conversationId,\n    transcript,\n    agentId\n  }\n}];"
+      },
+      "id": "determine-outcome",
+      "name": "Determine Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "call_id": "={{ $json.callId }}",
+            "conversation_id": "={{ $json.conversationId }}",
+            "transcript": "={{ JSON.stringify($json.transcript) }}"
+          }
+        },
+        "tableId": "call_transcripts"
+      },
+      "id": "insert-transcript",
+      "name": "Insert Transcript",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "supabaseApi": { "id": "hOsK6gvSyJWN6HU2", "name": "Supabase account" }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Determine Outcome').first().json.callId }}",
+              "condition": "eq"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "outcome": "={{ $('Determine Outcome').first().json.outcome }}",
+            "duration_seconds": "={{ $('Determine Outcome').first().json.durationSeconds }}",
+            "ended_at": "={{ $('Determine Outcome').first().json.endedAt }}"
+          }
+        },
+        "tableId": "calls"
+      },
+      "id": "update-call",
+      "name": "Update Call Outcome",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2440, 300],
+      "credentials": {
+        "supabaseApi": { "id": "hOsK6gvSyJWN6HU2", "name": "Supabase account" }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $('Determine Outcome').first().json.userId }}",
+            "call_id": "={{ $('Determine Outcome').first().json.callId }}",
+            "channel": "push",
+            "payload": "={{ JSON.stringify({ outcome: $('Determine Outcome').first().json.outcome, agent_id: $('Determine Outcome').first().json.agentId, conversation_id: $('Determine Outcome').first().json.conversationId }) }}"
+          }
+        },
+        "tableId": "notifications"
+      },
+      "id": "insert-notification",
+      "name": "Insert Notification (outbox)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2660, 300],
+      "credentials": {
+        "supabaseApi": { "id": "hOsK6gvSyJWN6HU2", "name": "Supabase account" }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      },
+      "id": "respond-200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2880, 300]
+    }
+  ],
+  "connections": {
+    "Webhook — ElevenLabs Post-Call": {
+      "main": [[{ "node": "Validate ElevenLabs HMAC", "type": "main", "index": 0 }]]
+    },
+    "Validate ElevenLabs HMAC": {
+      "main": [[{ "node": "HMAC Valid?", "type": "main", "index": 0 }]]
+    },
+    "HMAC Valid?": {
+      "main": [
+        [{ "node": "Extract Fields", "type": "main", "index": 0 }],
+        [{ "node": "Insert security_alert event", "type": "main", "index": 0 }]
+      ]
+    },
+    "Insert security_alert event": {
+      "main": [[{ "node": "Respond 401", "type": "main", "index": 0 }]]
+    },
+    "Extract Fields": {
+      "main": [[{ "node": "Check Idempotency (call_transcripts)", "type": "main", "index": 0 }]]
+    },
+    "Check Idempotency (call_transcripts)": {
+      "main": [[{ "node": "Already Processed?", "type": "main", "index": 0 }]]
+    },
+    "Already Processed?": {
+      "main": [
+        [{ "node": "Respond 200 Idempotent", "type": "main", "index": 0 }],
+        [{ "node": "Lookup Call by SID", "type": "main", "index": 0 }]
+      ]
+    },
+    "Lookup Call by SID": {
+      "main": [[{ "node": "Call Found?", "type": "main", "index": 0 }]]
+    },
+    "Call Found?": {
+      "main": [
+        [{ "node": "Determine Outcome", "type": "main", "index": 0 }],
+        [{ "node": "Insert orphan_webhook event", "type": "main", "index": 0 }]
+      ]
+    },
+    "Insert orphan_webhook event": {
+      "main": [[{ "node": "Respond 200 Orphan", "type": "main", "index": 0 }]]
+    },
+    "Determine Outcome": {
+      "main": [[{ "node": "Insert Transcript", "type": "main", "index": 0 }]]
+    },
+    "Insert Transcript": {
+      "main": [[{ "node": "Update Call Outcome", "type": "main", "index": 0 }]]
+    },
+    "Update Call Outcome": {
+      "main": [[{ "node": "Insert Notification (outbox)", "type": "main", "index": 0 }]]
+    },
+    "Insert Notification (outbox)": {
+      "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false
+}

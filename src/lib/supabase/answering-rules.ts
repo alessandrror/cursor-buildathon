@@ -2,7 +2,7 @@ import type { AnsweringRuleType, DbAnsweringRule } from "@/types/database";
 import { getClerkScopedSupabase } from "@/lib/supabase/clerk-scoped-server";
 
 export type RuleListItem = {
-  id: string;
+  id?: string;
   value: string;
   active: boolean;
 };
@@ -19,7 +19,7 @@ export type AnsweringRulesConfig = {
   prefixBlock: RuleListItem[];
 };
 
-const defaultRulesConfig: AnsweringRulesConfig = {
+export const defaultRulesConfig: AnsweringRulesConfig = {
   schedule: {
     start: "08:00",
     end: "20:00",
@@ -118,4 +118,128 @@ export async function getAnsweringRulesForCurrentUser(): Promise<AnsweringRulesC
   }
 
   return normalizeRules((data ?? []) as DbAnsweringRule[]);
+}
+
+async function getUserCountryCode(
+  userId: string,
+  supabase: NonNullable<
+    Awaited<ReturnType<typeof getClerkScopedSupabase>>["supabase"]
+  >,
+  useUserFilter: boolean,
+): Promise<string> {
+  let query = supabase.from("users").select("country_code").eq("id", userId);
+
+  if (useUserFilter) {
+    query = query.eq("id", userId);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.country_code ?? "SV";
+}
+
+type RuleInsertRow = {
+  user_id: string;
+  rule_type: AnsweringRuleType;
+  value: Record<string, unknown>;
+  is_active: boolean;
+};
+
+function configToInsertRows(
+  userId: string,
+  config: AnsweringRulesConfig,
+): RuleInsertRow[] {
+  const rows: RuleInsertRow[] = [
+    {
+      user_id: userId,
+      rule_type: "schedule",
+      value: { start: config.schedule.start, end: config.schedule.end },
+      is_active: config.schedule.active,
+    },
+    {
+      user_id: userId,
+      rule_type: "anonymous",
+      value: { action: config.anonymousAction },
+      is_active: true,
+    },
+  ];
+
+  for (const item of config.whitelist) {
+    rows.push({
+      user_id: userId,
+      rule_type: "whitelist",
+      value: { number: item.value },
+      is_active: item.active,
+    });
+  }
+
+  for (const item of config.blacklist) {
+    rows.push({
+      user_id: userId,
+      rule_type: "blacklist",
+      value: { number: item.value },
+      is_active: item.active,
+    });
+  }
+
+  for (const item of config.prefixBlock) {
+    rows.push({
+      user_id: userId,
+      rule_type: "prefix_block",
+      value: { prefix: item.value },
+      is_active: item.active,
+    });
+  }
+
+  return rows;
+}
+
+export async function saveAnsweringRulesForCurrentUser(
+  config: AnsweringRulesConfig,
+): Promise<AnsweringRulesConfig> {
+  const { userId, supabase, useUserFilter } = await getClerkScopedSupabase();
+
+  if (!userId || !supabase) {
+    throw new Error("Unauthorized");
+  }
+
+  let deleteQuery = supabase.from("answering_rules").delete();
+
+  if (useUserFilter) {
+    deleteQuery = deleteQuery.eq("user_id", userId);
+  }
+
+  const { error: deleteError } = await deleteQuery;
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  const rows = configToInsertRows(userId, config);
+
+  if (rows.length > 0) {
+    const { error: insertError } = await supabase
+      .from("answering_rules")
+      .insert(rows);
+
+    if (insertError) {
+      throw insertError;
+    }
+  }
+
+  return getAnsweringRulesForCurrentUser();
+}
+
+export async function getCountryCodeForCurrentUser(): Promise<string> {
+  const { userId, supabase, useUserFilter } = await getClerkScopedSupabase();
+
+  if (!userId || !supabase) {
+    return "SV";
+  }
+
+  return getUserCountryCode(userId, supabase, useUserFilter);
 }

@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import {
-  ArrowRight,
   Ban,
+  Check,
   Clock3,
   EyeOff,
+  Loader2,
   Plus,
   ShieldCheck,
   ShieldX,
@@ -19,11 +19,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { saveAnsweringRules } from "@/lib/rules/client";
 import type {
   AnsweringRulesConfig,
   RuleListItem,
 } from "@/lib/supabase/answering-rules";
-import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 type RulesBoardProps = {
@@ -32,58 +32,61 @@ type RulesBoardProps = {
 
 type RuleListKind = "whitelist" | "blacklist" | "prefixBlock";
 
-const fallbackWhiteList: RuleListItem[] = [
-  { id: "example-family", value: "+503 7712 4408", active: true },
-  { id: "example-pharmacy", value: "+503 2260 1180", active: true },
-  { id: "example-bank", value: "Banco (oficial)", active: true },
-];
-
-const fallbackBlackList: RuleListItem[] = [
-  { id: "example-collection", value: "+503 2555 0142", active: true },
-  { id: "example-spam", value: "+1 809 555 7788", active: true },
-];
-
-const fallbackPrefixes: RuleListItem[] = [
-  { id: "example-prefix", value: "+1800", active: true },
-];
-
-function withFallback(list: RuleListItem[], fallback: RuleListItem[]) {
-  return list.length > 0 ? list : fallback;
-}
-
 function getActiveCount(list: RuleListItem[]) {
   return list.filter((item) => item.active).length;
 }
 
 function createRuleItem(value: string): RuleListItem {
   return {
-    id: `${value}-${Date.now()}`,
+    id: `temp-${value}-${Date.now()}`,
     value,
     active: true,
+  };
+}
+
+function buildRulesPayload(params: {
+  scheduleStart: string;
+  scheduleEnd: string;
+  scheduleActive: boolean;
+  anonymousAction: "answer" | "reject";
+  whitelist: RuleListItem[];
+  blacklist: RuleListItem[];
+  prefixBlock: RuleListItem[];
+}): AnsweringRulesConfig {
+  return {
+    schedule: {
+      start: params.scheduleStart,
+      end: params.scheduleEnd,
+      active: params.scheduleActive,
+    },
+    anonymousAction: params.anonymousAction,
+    whitelist: params.whitelist,
+    blacklist: params.blacklist,
+    prefixBlock: params.prefixBlock,
   };
 }
 
 export function RulesBoard({ initialRules }: RulesBoardProps) {
   const [scheduleStart, setScheduleStart] = useState(initialRules.schedule.start);
   const [scheduleEnd, setScheduleEnd] = useState(initialRules.schedule.end);
+  const [scheduleActive, setScheduleActive] = useState(
+    initialRules.schedule.active,
+  );
   const [anonymousAction, setAnonymousAction] = useState(
     initialRules.anonymousAction,
   );
-  const [whitelist, setWhitelist] = useState(() =>
-    withFallback(initialRules.whitelist, fallbackWhiteList),
-  );
-  const [blacklist, setBlacklist] = useState(() =>
-    withFallback(initialRules.blacklist, fallbackBlackList),
-  );
-  const [prefixBlock, setPrefixBlock] = useState(() =>
-    withFallback(initialRules.prefixBlock, fallbackPrefixes),
-  );
+  const [whitelist, setWhitelist] = useState(initialRules.whitelist);
+  const [blacklist, setBlacklist] = useState(initialRules.blacklist);
+  const [prefixBlock, setPrefixBlock] = useState(initialRules.prefixBlock);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const stats = useMemo(
     () => [
       {
         label: "Horario",
-        value: `${scheduleStart}-${scheduleEnd}`,
+        value: scheduleActive ? `${scheduleStart}-${scheduleEnd}` : "24/7",
         icon: Clock3,
         tone: "text-warning",
       },
@@ -106,18 +109,95 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
         tone: "text-destructive",
       },
     ],
-    [anonymousAction, blacklist, scheduleEnd, scheduleStart, whitelist],
+    [
+      anonymousAction,
+      blacklist,
+      scheduleActive,
+      scheduleEnd,
+      scheduleStart,
+      whitelist,
+    ],
   );
+
+  async function handleSave() {
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    try {
+      const saved = await saveAnsweringRules(
+        buildRulesPayload({
+          scheduleStart,
+          scheduleEnd,
+          scheduleActive,
+          anonymousAction,
+          whitelist,
+          blacklist,
+          prefixBlock,
+        }),
+      );
+
+      setScheduleStart(saved.schedule.start);
+      setScheduleEnd(saved.schedule.end);
+      setScheduleActive(saved.schedule.active);
+      setAnonymousAction(saved.anonymousAction);
+      setWhitelist(saved.whitelist);
+      setBlacklist(saved.blacklist);
+      setPrefixBlock(saved.prefixBlock);
+      setSaveSuccess(true);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron guardar las reglas.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-10">
-      <header className="max-w-3xl">
-        <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">
-          Reglas de contestación
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Define qué llamadas atiende el agente y cuáles se rechazan.
-        </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="max-w-3xl">
+          <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">
+            Reglas de contestación
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Define qué llamadas atiende el agente y cuáles se rechazan.
+          </p>
+        </div>
+        <div className="flex flex-col items-stretch gap-2 sm:items-end">
+          <Button
+            type="button"
+            onClick={() => void handleSave()}
+            disabled={isSaving}
+            className="sm:min-w-40"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                Guardando...
+              </>
+            ) : (
+              "Guardar cambios"
+            )}
+          </Button>
+          {saveError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {saveError}
+            </p>
+          ) : null}
+          {saveSuccess ? (
+            <p
+              className="flex items-center gap-1.5 text-sm text-success"
+              role="status"
+            >
+              <Check className="size-4" aria-hidden />
+              Reglas guardadas
+            </p>
+          ) : null}
+        </div>
       </header>
 
       <section aria-label="Resumen de reglas" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -163,15 +243,29 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             <div className="rounded-lg bg-secondary/45 p-4">
-              <Label className="mb-3 block font-display font-bold">
-                Horario de atención
-              </Label>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <Label className="font-display font-bold">
+                  Horario de atención
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="schedule-active" className="text-xs text-muted-foreground">
+                    Activo
+                  </Label>
+                  <Switch
+                    id="schedule-active"
+                    checked={scheduleActive}
+                    onCheckedChange={setScheduleActive}
+                    aria-label="Activar horario de atención"
+                  />
+                </div>
+              </div>
               <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                 <Input
                   type="time"
                   value={scheduleStart}
                   onChange={(event) => setScheduleStart(event.target.value)}
                   aria-label="Hora de inicio"
+                  disabled={!scheduleActive}
                 />
                 <span className="text-muted-foreground" aria-hidden>
                   -
@@ -181,10 +275,11 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
                   value={scheduleEnd}
                   onChange={(event) => setScheduleEnd(event.target.value)}
                   aria-label="Hora de fin"
+                  disabled={!scheduleActive}
                 />
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                Zona: America/El_Salvador
+                Zona: America/El_Salvador. Desactiva el horario para atender 24/7.
               </p>
             </div>
 
@@ -233,6 +328,7 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
           icon={ShieldCheck}
           iconClassName="text-success"
           placeholder="Añadir número..."
+          emptyHint="Los números en lista blanca siempre se atienden."
           items={whitelist}
           onChange={setWhitelist}
           kind="whitelist"
@@ -243,6 +339,7 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
           icon={ShieldX}
           iconClassName="text-destructive"
           placeholder="Añadir número..."
+          emptyHint="Los números en lista negra siempre se rechazan."
           items={blacklist}
           onChange={setBlacklist}
           kind="blacklist"
@@ -253,27 +350,11 @@ export function RulesBoard({ initialRules }: RulesBoardProps) {
           icon={Ban}
           iconClassName="text-warning"
           placeholder="Añadir prefijo..."
+          emptyHint="Ejemplo: +1800 para bloquear toll-free."
           items={prefixBlock}
           onChange={setPrefixBlock}
           kind="prefixBlock"
         />
-      </section>
-
-      <section className="rounded-xl bg-primary px-5 py-5 text-primary-foreground shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-6">
-        <div>
-          <h2 className="font-display text-xl font-black tracking-tight">
-            Pruébalo antes de una llamada real
-          </h2>
-          <p className="mt-1 text-sm text-primary-foreground/75">
-            Simula distintos escenarios y mira qué decidirían tus reglas.
-          </p>
-        </div>
-        <Button className="mt-4 bg-primary-foreground text-primary hover:bg-primary-foreground/90 sm:mt-0" asChild>
-          <Link href={routes.dashboardSimulator}>
-            Abrir simulador
-            <ArrowRight data-icon="inline-end" />
-          </Link>
-        </Button>
       </section>
     </div>
   );
@@ -285,6 +366,7 @@ type RuleListCardProps = {
   icon: LucideIcon;
   iconClassName: string;
   placeholder: string;
+  emptyHint: string;
   items: RuleListItem[];
   onChange: (items: RuleListItem[]) => void;
   kind: RuleListKind;
@@ -296,6 +378,7 @@ function RuleListCard({
   icon: Icon,
   iconClassName,
   placeholder,
+  emptyHint,
   items,
   onChange,
   kind,
@@ -310,16 +393,20 @@ function RuleListCard({
     setDraft("");
   }
 
-  function toggleItem(id: string) {
+  function toggleItem(id: string | undefined, value: string) {
     onChange(
       items.map((item) =>
-        item.id === id ? { ...item, active: !item.active } : item,
+        (item.id ?? item.value) === (id ?? value)
+          ? { ...item, active: !item.active }
+          : item,
       ),
     );
   }
 
-  function removeItem(id: string) {
-    onChange(items.filter((item) => item.id !== id));
+  function removeItem(id: string | undefined, value: string) {
+    onChange(
+      items.filter((item) => (item.id ?? item.value) !== (id ?? value)),
+    );
   }
 
   return (
@@ -360,31 +447,37 @@ function RuleListCard({
         </div>
 
         <div className="mt-3 flex flex-col gap-2">
-          {items.map((item) => (
-            <div
-              key={`${kind}-${item.id}`}
-              className="flex items-center gap-3 rounded-md bg-secondary/45 px-3 py-2"
-            >
-              <p className="min-w-0 flex-1 truncate text-sm font-semibold">
-                {item.value}
-              </p>
-              <Switch
-                checked={item.active}
-                onCheckedChange={() => toggleItem(item.id)}
-                aria-label={`Activar ${item.value}`}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8 text-destructive"
-                onClick={() => removeItem(item.id)}
-                aria-label={`Eliminar ${item.value}`}
+          {items.length === 0 ? (
+            <p className="rounded-md bg-secondary/45 px-3 py-3 text-sm text-muted-foreground">
+              {emptyHint}
+            </p>
+          ) : (
+            items.map((item) => (
+              <div
+                key={`${kind}-${item.id ?? item.value}`}
+                className="flex items-center gap-3 rounded-md bg-secondary/45 px-3 py-2"
               >
-                <Trash2 aria-hidden />
-              </Button>
-            </div>
-          ))}
+                <p className="min-w-0 flex-1 truncate text-sm font-semibold">
+                  {item.value}
+                </p>
+                <Switch
+                  checked={item.active}
+                  onCheckedChange={() => toggleItem(item.id, item.value)}
+                  aria-label={`Activar ${item.value}`}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 text-destructive"
+                  onClick={() => removeItem(item.id, item.value)}
+                  aria-label={`Eliminar ${item.value}`}
+                >
+                  <Trash2 aria-hidden />
+                </Button>
+              </div>
+            ))
+          )}
         </div>
       </CardContent>
     </Card>

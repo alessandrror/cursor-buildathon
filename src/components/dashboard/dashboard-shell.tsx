@@ -11,13 +11,12 @@ import { cn } from "@/lib/utils";
 
 type DashboardShellProps = {
   children: React.ReactNode;
-  activeNav?: "calls" | "settings" | "simulator";
+  activeNav?: "calls" | "settings";
 };
 
 const navItems = [
   { href: routes.dashboard, label: "Panel", id: "calls" as const },
   { href: routes.dashboardRules, label: "Reglas", id: "settings" as const },
-  { href: routes.dashboardSimulator, label: "Simulador", id: "simulator" as const },
 ];
 
 export function DashboardShell({
@@ -25,9 +24,7 @@ export function DashboardShell({
   activeNav = "calls",
 }: DashboardShellProps) {
   const pathname = usePathname();
-  const currentNav = pathname.startsWith(routes.dashboardSimulator)
-    ? "simulator"
-    : pathname.startsWith(routes.dashboardRules)
+  const currentNav = pathname.startsWith(routes.dashboardRules)
     ? "settings"
     : activeNav;
 

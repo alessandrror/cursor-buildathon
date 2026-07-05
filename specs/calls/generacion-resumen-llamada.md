@@ -1,6 +1,6 @@
 # SPEC: Generación de resumen de llamada
 
-- user_story: US-005
+- user_story: Alex040822
 - autor: @noe
 - fecha: 2026-07-04
 - estado: borrador
@@ -8,12 +8,12 @@
 ## Descripción
 Al finalizar una conversación atendida por el agente, n8n toma la transcripción recibida en el
 webhook post-llamada de ElevenLabs, genera un resumen estructurado en español usando la API de
-Claude, y lo persiste en Supabase asociado al usuario y a la llamada. El resumen alimenta el
+OpenAI (ChatGPT, modelo `gpt-4o`), y lo persiste en Supabase asociado al usuario y a la llamada. El resumen alimenta el
 dashboard y las notificaciones.
 
 ## Comportamiento esperado
 - Trigger: webhook post-llamada procesado con `outcome = completed` y transcripción no vacía.
-- n8n invoca OpenAI (gpt-4o-mini) con un prompt versionado que produce **solo JSON** con:
+- n8n invoca OpenAI Chat Completions (`gpt-4o`) con un prompt versionado que produce **solo JSON** con:
   - `caller_name`: nombre del emisor si se identificó, o `null`.
   - `caller_company`: empresa/organización, o `null`.
   - `reason`: motivo de la llamada en 1 oración.
@@ -40,7 +40,7 @@ dashboard y las notificaciones.
 
 ## Dependencias
 - `api/webhook-elevenlabs-post-llamada.md` (proveedor de la transcripción).
-- OpenAI API (credencial en n8n).
+- OpenAI API (credencial `OPENAI_API_KEY` en n8n).
 - Tablas `calls`, `call_summaries` (ver `datos/modelo-datos-core.md`).
 
 ## Fuera de alcance

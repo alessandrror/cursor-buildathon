@@ -11,7 +11,7 @@
         }
       },
       "id": "webhook-entry",
-      "name": "Webhook \u2014 ElevenLabs Post-Call",
+      "name": "Webhook — ElevenLabs Post-Call",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
@@ -22,7 +22,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ponytail: skip HMAC for demo \u2014 n8n Cloud no expone rawBody como bytes; agregar validaci\u00f3n cuando se use reverse proxy que inyecte el raw body.\nconst item = $input.first().json;\n// webhook node v2 wraps payload en {headers, body, params, query}\nconst body = item.body ?? item;\nreturn [{ json: { valid: true, body } }];"
+        "jsCode": "// ponytail: skip HMAC for demo — n8n Cloud no expone rawBody como bytes; agregar validación cuando se use reverse proxy que inyecte el raw body.\nconst item = $input.first().json;\n// webhook node v2 wraps payload en {headers, body, params, query}\nconst body = item.body ?? item;\nreturn [{ json: { valid: true, body } }];"
       },
       "id": "validate-hmac",
       "name": "Validate ElevenLabs HMAC",
@@ -568,7 +568,7 @@
     }
   ],
   "connections": {
-    "Webhook \u2014 ElevenLabs Post-Call": {
+    "Webhook — ElevenLabs Post-Call": {
       "main": [
         [
           {

@@ -1,6 +1,6 @@
 # SPEC: Flujo de contestación con agente de IA (ElevenLabs)
 
-- user_story: US-004
+- user_story: Alex040822
 - autor: @noe
 - fecha: 2026-07-04
 - estado: borrador

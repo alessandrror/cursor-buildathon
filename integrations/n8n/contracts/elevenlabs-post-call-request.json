@@ -1,0 +1,50 @@
+{
+  "$comment": "ElevenLabs post-call webhook — application/json. See specs/api/webhook-elevenlabs-post-llamada.md",
+  "required_fields": ["conversation_id", "metadata.call_sid"],
+  "example": {
+    "conversation_id": "conv_abc123",
+    "agent_id": "agent_xyz",
+    "status": "done",
+    "metadata": {
+      "call_sid": "CAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "start_time": "2026-07-04T15:30:00Z",
+      "duration_seconds": 87
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "message": "Hola, ha llamado al asistente de María...",
+        "time_in_call_secs": 0
+      },
+      {
+        "role": "user",
+        "message": "Buenas, soy Carlos de Telecom Promo.",
+        "time_in_call_secs": 4
+      }
+    ]
+  },
+  "idempotency_key": "conversation_id",
+  "supabase_operations": [
+    {
+      "action": "update",
+      "table": "calls",
+      "match": { "twilio_call_sid": "metadata.call_sid" },
+      "fields": {
+        "outcome": "completed | silent_hangup | caller_hangup | agent_error",
+        "duration_seconds": "metadata.duration_seconds",
+        "ended_at": "now()"
+      }
+    },
+    {
+      "action": "insert",
+      "table": "call_transcripts",
+      "on_conflict": "conversation_id",
+      "fields": {
+        "call_id": "from calls.id",
+        "conversation_id": "conversation_id",
+        "transcript": "transcript array as jsonb"
+      }
+    }
+  ],
+  "triggers_subworkflow": "generate-summary when outcome=completed and transcript non-empty"
+}

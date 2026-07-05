@@ -1,0 +1,27 @@
+{
+  "$comment": "Twilio Voice webhook — application/x-www-form-urlencoded. See specs/api/webhook-twilio-llamada-entrante.md",
+  "required_fields": ["CallSid", "To"],
+  "optional_fields": ["From", "CallStatus", "Direction"],
+  "example": {
+    "CallSid": "CAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "From": "+50370001234",
+    "To": "+15005550006",
+    "CallStatus": "ringing",
+    "Direction": "inbound"
+  },
+  "idempotency_key": "CallSid",
+  "supabase_upsert": {
+    "table": "calls",
+    "on_conflict": "twilio_call_sid",
+    "fields": {
+      "user_id": "from phone_numbers lookup",
+      "phone_number_id": "from phone_numbers.id",
+      "twilio_call_sid": "CallSid",
+      "caller_number": "From (null if anonymous)",
+      "decision": "answer | reject",
+      "matched_rule": "rule id or label",
+      "outcome": "in_progress | rejected",
+      "started_at": "now()"
+    }
+  }
+}

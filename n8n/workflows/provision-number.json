@@ -1,0 +1,330 @@
+{
+  "name": "provision-number",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "provision/number",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-entry",
+      "name": "Webhook — Provision Number",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "provision-number"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env['CLERK_JWKS_URL'] }}",
+        "options": {}
+      },
+      "id": "fetch-jwks",
+      "name": "Fetch JWKS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// spec: §Notas técnicas — verificar JWT Clerk (RS256) con JWKS\nconst { createPublicKey, createVerify } = require('crypto');\n\nconst authHeader = $input.first().headers['authorization'] ?? '';\nconst jwt = authHeader.replace(/^Bearer\\s+/i, '').trim();\nif (!jwt) return [{ json: { valid: false, reason: 'missing_token' } }];\n\nconst parts = jwt.split('.');\nif (parts.length !== 3) return [{ json: { valid: false, reason: 'malformed_token' } }];\nconst [headerB64, payloadB64, sigB64] = parts;\n\nlet header, payload;\ntry {\n  header = JSON.parse(Buffer.from(headerB64, 'base64url').toString());\n  payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString());\n} catch (e) {\n  return [{ json: { valid: false, reason: 'parse_error' } }];\n}\n\nif (payload.exp < Math.floor(Date.now() / 1000)) {\n  return [{ json: { valid: false, reason: 'expired' } }];\n}\n\nconst jwks = $('Fetch JWKS').first().json;\nconst key = (jwks.keys || []).find(k => k.kid === header.kid);\nif (!key) return [{ json: { valid: false, reason: 'key_not_found' } }];\n\ntry {\n  const pubKey = createPublicKey({ key, format: 'jwk' });\n  const verifier = createVerify('RSA-SHA256');\n  verifier.update(`${headerB64}.${payloadB64}`);\n  const valid = verifier.verify(pubKey, Buffer.from(sigB64, 'base64url'));\n  return [{ json: { valid, userId: valid ? payload.sub : null, reason: valid ? null : 'invalid_signature' } }];\n} catch (e) {\n  return [{ json: { valid: false, reason: 'verify_error' } }];\n}"
+      },
+      "id": "validate-jwt",
+      "name": "Validate JWT",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "id": "jwt-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "jwt-router",
+      "name": "JWT Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Unauthorized', reason: $('Validate JWT').first().json.reason }) }}",
+        "options": {
+          "responseCode": 401,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      },
+      "id": "respond-401",
+      "name": "Respond 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1120, 500]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Validate JWT').first().json.userId }}",
+              "condition": "eq"
+            },
+            {
+              "keyName": "status",
+              "keyValue": "active",
+              "condition": "eq"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {},
+        "tableId": "phone_numbers"
+      },
+      "id": "check-existing",
+      "name": "Check Existing Number",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": { "id": "hOsK6gvSyJWN6HU2", "name": "Supabase account" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-number",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ]
+        }
+      },
+      "id": "existing-router",
+      "name": "Has Existing Number?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ phone_number: $json.e164_number, twilio_sid: $json.twilio_sid, status: $json.status, existing: true }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      },
+      "id": "respond-200-existing",
+      "name": "Respond 200 Existing",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Twilio Basic auth header and parse request params\nconst sid = $env['TWILIO_ACCOUNT_SID'];\nconst token = $env['TWILIO_AUTH_TOKEN'];\nconst auth = 'Basic ' + Buffer.from(`${sid}:${token}`).toString('base64');\n\nconst body = $input.first().body;\nconst parsed = typeof body === 'object' ? body : (JSON.parse(body) || {});\nconst isoCountry = parsed.isoCountry || 'US';\nconst areaCode = parsed.areaCode || null;\n\nreturn [{ json: { auth, accountSid: sid, isoCountry, areaCode, userId: $('Validate JWT').first().json.userId } }];"
+      },
+      "id": "prepare-request",
+      "name": "Prepare Twilio Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 380]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.twilio.com/2010-04-01/Accounts/' + $json.accountSid + '/AvailablePhoneNumbers/' + $json.isoCountry + '/Local.json' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ $json.auth }}" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "Capabilities", "value": "voice" },
+            { "name": "PageSize", "value": "5" },
+            { "name": "AreaCode", "value": "={{ $json.areaCode || '' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-available-numbers",
+      "name": "Fetch Available Numbers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 380]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-available",
+              "leftValue": "={{ ($json.available_phone_numbers || []).length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "numbers-available-router",
+      "name": "Numbers Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2000, 380]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'No phone numbers available for the requested country/area. Try a different area code.' }) }}",
+        "options": {
+          "responseCode": 422,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      },
+      "id": "respond-422",
+      "name": "Respond 422 No Numbers",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2220, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.twilio.com/2010-04-01/Accounts/' + $('Prepare Twilio Request').first().json.accountSid + '/IncomingPhoneNumbers.json' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ $('Prepare Twilio Request').first().json.auth }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "PhoneNumber", "value": "={{ $json.available_phone_numbers[0].phone_number }}" },
+            { "name": "VoiceUrl", "value": "={{ $env['N8N_WEBHOOK_URL'] + '/webhook/twilio/incoming-call' }}" },
+            { "name": "VoiceFallbackUrl", "value": "={{ $env['TWILIO_FALLBACK_TWIML_URL'] || '' }}" },
+            { "name": "StatusCallback", "value": "={{ $env['N8N_WEBHOOK_URL'] + '/webhook/twilio/call-status' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "purchase-number",
+      "name": "Purchase Number (Twilio)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2220, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $('Prepare Twilio Request').first().json.userId }}",
+            "e164_number": "={{ $json.phone_number }}",
+            "twilio_sid": "={{ $json.sid }}",
+            "status": "active"
+          }
+        },
+        "tableId": "phone_numbers"
+      },
+      "id": "insert-phone-number",
+      "name": "Insert phone_numbers",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2440, 300],
+      "credentials": {
+        "supabaseApi": { "id": "hOsK6gvSyJWN6HU2", "name": "Supabase account" }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ phone_number: $('Purchase Number (Twilio)').first().json.phone_number, twilio_sid: $('Purchase Number (Twilio)').first().json.sid, status: 'active' }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      },
+      "id": "respond-200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2660, 300]
+    }
+  ],
+  "connections": {
+    "Webhook — Provision Number": {
+      "main": [[{ "node": "Fetch JWKS", "type": "main", "index": 0 }]]
+    },
+    "Fetch JWKS": {
+      "main": [[{ "node": "Validate JWT", "type": "main", "index": 0 }]]
+    },
+    "Validate JWT": {
+      "main": [[{ "node": "JWT Valid?", "type": "main", "index": 0 }]]
+    },
+    "JWT Valid?": {
+      "main": [
+        [{ "node": "Check Existing Number", "type": "main", "index": 0 }],
+        [{ "node": "Respond 401", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Existing Number": {
+      "main": [[{ "node": "Has Existing Number?", "type": "main", "index": 0 }]]
+    },
+    "Has Existing Number?": {
+      "main": [
+        [{ "node": "Respond 200 Existing", "type": "main", "index": 0 }],
+        [{ "node": "Prepare Twilio Request", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Twilio Request": {
+      "main": [[{ "node": "Fetch Available Numbers", "type": "main", "index": 0 }]]
+    },
+    "Fetch Available Numbers": {
+      "main": [[{ "node": "Numbers Available?", "type": "main", "index": 0 }]]
+    },
+    "Numbers Available?": {
+      "main": [
+        [{ "node": "Purchase Number (Twilio)", "type": "main", "index": 0 }],
+        [{ "node": "Respond 422 No Numbers", "type": "main", "index": 0 }]
+      ]
+    },
+    "Purchase Number (Twilio)": {
+      "main": [[{ "node": "Insert phone_numbers", "type": "main", "index": 0 }]]
+    },
+    "Insert phone_numbers": {
+      "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false
+}

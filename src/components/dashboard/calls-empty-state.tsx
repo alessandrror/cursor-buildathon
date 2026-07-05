@@ -1,4 +1,4 @@
-import { AlertCircle, PhoneCall } from "lucide-react";
+import { AlertCircle, PhoneCall, Sparkles } from "lucide-react";
 
 import { GhostLineMark } from "@/components/brand/ghostline-logo";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,9 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 type CallsEmptyStateProps = {
   error?: string | null;
   hint?: string | null;
+  showDevHint?: boolean;
 };
 
-export function CallsEmptyState({ error, hint }: CallsEmptyStateProps) {
+export function CallsEmptyState({
+  error,
+  hint,
+  showDevHint = false,
+}: CallsEmptyStateProps) {
   const hasError = Boolean(error);
 
   return (
@@ -51,6 +56,15 @@ export function CallsEmptyState({ error, hint }: CallsEmptyStateProps) {
             </>
           )}
         </div>
+        {showDevHint && !hasError && (
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1">
+              <Sparkles className="size-3.5" aria-hidden />
+              En desarrollo:{" "}
+              <code className="text-foreground">POST /api/dev/simulate-call</code>
+            </span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

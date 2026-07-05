@@ -11,6 +11,8 @@ export default function SignUpPage() {
         routing="path"
         path={routes.signUp}
         signInUrl={routes.signIn}
+        forceRedirectUrl={routes.voiceOnboarding}
+        fallbackRedirectUrl={routes.voiceOnboarding}
       />
     </main>
   );

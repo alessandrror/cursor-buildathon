@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Ban, Flag, ShieldCheck, UserRoundCheck } from "lucide-react";
 
 import { CallTranscript } from "@/components/dashboard/call-transcript";
+import { MockDataBanner } from "@/components/dashboard/mock-data-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import type { CallDetail } from "@/types/call";
 
 type CallSummaryViewProps = {
   call: CallDetail;
+  showMockBanner?: boolean;
 };
 
 function getStatusLabel(call: CallDetail) {
@@ -78,7 +80,7 @@ function getSummaryReason(call: CallDetail) {
   return call.reason ?? call.summary ?? getOutcomeMeta(call.outcome).description;
 }
 
-export function CallSummaryView({ call }: CallSummaryViewProps) {
+export function CallSummaryView({ call, showMockBanner }: CallSummaryViewProps) {
   const outcome = getOutcomeMeta(call.outcome);
   const OutcomeIcon = outcome.icon;
   const category = call.category ? getCategoryMeta(call.category) : null;
@@ -93,6 +95,8 @@ export function CallSummaryView({ call }: CallSummaryViewProps) {
           Volver a la llamada
         </Link>
       </Button>
+
+      {showMockBanner && <MockDataBanner />}
 
       <Card className="gap-0 py-0 shadow-none">
         <CardContent className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">

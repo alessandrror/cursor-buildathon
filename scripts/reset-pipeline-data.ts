@@ -23,6 +23,8 @@ const PIPELINE_TABLES = [
   "calls",
   "answering_rules",
   "phone_numbers",
+  "voice_clone_events",
+  "user_voice_profiles",
   "system_events",
   "users",
 ] as const;

@@ -21,6 +21,7 @@ import {
   ClerkSignUpButton,
 } from "@/components/layout/auth-controls";
 import { GhostLineLogo, GhostLineMark } from "@/components/brand/ghostline-logo";
+import { PricingSection } from "@/components/landing/pricing-section";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,9 @@ export default function HomePage() {
             </a>
             <a href="#dashboard" className="hover:text-hero-foreground">
               Dashboard
+            </a>
+            <a href="#precios" className="hover:text-hero-foreground">
+              Precios
             </a>
           </nav>
           <div className="flex items-center gap-2">
@@ -362,6 +366,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      <PricingSection />
+
       <footer className="border-t border-border bg-muted/45">
         <div className="mx-auto grid max-w-6xl gap-8 px-6 py-10 md:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
           <div className="flex flex-col gap-4">
@@ -381,6 +387,9 @@ export default function HomePage() {
             </a>
             <a href="#dashboard" className="text-muted-foreground hover:text-foreground">
               Dashboard
+            </a>
+            <a href="#precios" className="text-muted-foreground hover:text-foreground">
+              Precios
             </a>
           </div>
           <div className="flex flex-col gap-3 text-sm">

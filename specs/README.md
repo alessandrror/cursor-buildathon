@@ -19,13 +19,13 @@ y recibe **notificaciones** de cada llamada procesada.
 
 | Capa | Tecnología | Rol |
 |---|---|---|
-| Frontend | Vue 3 + TypeScript + PrimeVue (Unstyled) + Tailwind CSS | Dashboard, onboarding, configuración de reglas |
-| Auth + BaaS | Supabase Auth (Google OAuth 2.0 + email) | Registro, sesión, JWT, RLS |
+| Frontend | Next.js 16 + React 19 + shadcn/ui + Tailwind CSS | Dashboard, landing, configuración de reglas |
+| Auth | Clerk + Supabase JWT (RLS) | Registro, sesión, políticas por usuario |
 | Base de datos | Supabase PostgreSQL (con Row Level Security) | Usuarios, números, reglas, llamadas, resúmenes, notificaciones |
 | Orquestación | n8n (self-hosted o cloud, en modo queue) | Webhooks de Twilio/ElevenLabs, evaluación de reglas, flujo post-llamada, notificaciones |
 | Telefonía | Twilio (Programmable Voice + Incoming Phone Numbers API) | Aprovisionamiento de números, recepción de llamadas, TwiML |
 | Voz IA | ElevenLabs Conversational AI (Agents Platform, integración nativa con Twilio) | Agente que contesta en español, transcripción, eventos post-llamada |
-| Resúmenes | Claude API (claude-sonnet) invocado desde n8n | Generación del resumen estructurado de la transcripción |
+| Resúmenes | OpenAI Chat Completions (`gpt-4o`) invocado desde n8n | Generación del resumen estructurado de la transcripción |
 | Notificaciones | Resend/SMTP (email) + Web Push (VAPID) | Aviso de llamada procesada / spam bloqueado |
 
 ### Diagrama de componentes (flujo de una llamada)
@@ -45,13 +45,13 @@ Llamante ──► Twilio (número del usuario)
        ▼             n8n /webhook/elevenlabs/post-call
    registra llamada         │ transcripción + metadata
    como bloqueada           ▼
-                     Claude API → resumen ──► Supabase (calls, call_summaries)
+                     OpenAI API → resumen ──► Supabase (calls, call_summaries)
                                                   │
                                                   ▼
                                        n8n → notificación (email/push)
                                                   │
                                                   ▼
-                                       Dashboard Vue (Supabase Realtime)
+                                       Dashboard Next.js (Supabase Realtime)
 ```
 
 ## 3. Estrategia de tolerancia a fallos y confiabilidad

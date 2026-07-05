@@ -1,0 +1,30 @@
+{
+  "$comment": "UPSERT into call_summaries after OpenAI summary generation",
+  "table": "call_summaries",
+  "on_conflict": "call_id",
+  "fields": {
+    "call_id": "uuid from calls.id",
+    "user_id": "calls.user_id",
+    "caller_name": "openai.caller_name",
+    "caller_company": "openai.caller_company",
+    "reason": "openai.reason",
+    "summary": "openai.summary",
+    "category": "openai.category",
+    "urgency": "openai.urgency",
+    "is_degraded": "false | true if fallback"
+  },
+  "follow_up": {
+    "table": "notifications",
+    "insert": {
+      "user_id": "calls.user_id",
+      "call_id": "calls.id",
+      "channel": "email",
+      "status": "pending",
+      "payload": {
+        "type": "call_processed",
+        "summary": "openai.summary",
+        "category": "openai.category"
+      }
+    }
+  }
+}

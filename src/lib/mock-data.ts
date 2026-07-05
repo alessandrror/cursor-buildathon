@@ -1,57 +1,121 @@
-import type { CallSummary } from "@/types/call-summary";
+import type { CallDetail, CallListItem } from "@/types/call";
 import type { IntegrationStatus } from "@/types/integration";
 
-export const mockCallSummaries: CallSummary[] = [
-  {
-    id: "summary_001",
-    callerNumber: "+503 XXXX XXXX",
-    alternativeNumber: "+1 XXX XXX XXXX",
-    startedAt: "2026-07-04T10:30:00Z",
-    endedAt: "2026-07-04T10:34:00Z",
-    durationSeconds: 240,
-    status: "completed",
-    title: "Consulta general recibida",
-    summary:
-      "La persona realizó una consulta general. La IA respondió en español y la conversación finalizó correctamente.",
-    transcript: "Transcripción de ejemplo pendiente de integración real.",
-  },
-  {
-    id: "summary_002",
-    callerNumber: "+503 XXXX XXXX",
-    alternativeNumber: "+1 XXX XXX XXXX",
-    startedAt: "2026-07-04T11:15:00Z",
-    durationSeconds: 5,
-    status: "closed_by_silence",
-    closeReason: "El emisor no comunicó nada durante el tiempo de espera.",
-    title: "Llamada cerrada por silencio",
-    summary: "La llamada fue cerrada porque no hubo comunicación del emisor.",
-    transcript: "",
-  },
-  {
-    id: "summary_003",
-    callerNumber: "+503 XXXX XXXX",
-    alternativeNumber: "+1 XXX XXX XXXX",
-    startedAt: "2026-07-04T09:00:00Z",
-    endedAt: "2026-07-04T09:02:00Z",
-    durationSeconds: 120,
-    status: "rejected_by_rules",
-    closeReason: "Número no autorizado según reglas configuradas.",
-    title: "Llamada rechazada por reglas",
-    summary:
-      "La llamada fue rechazada automáticamente por no cumplir las reglas de filtrado.",
-  },
-  {
-    id: "summary_004",
-    callerNumber: "+503 XXXX XXXX",
-    alternativeNumber: "+1 XXX XXX XXXX",
-    startedAt: "2026-07-04T08:45:00Z",
-    durationSeconds: 0,
-    status: "failed",
-    closeReason: "Error al procesar la llamada.",
-    title: "Llamada fallida",
-    summary: "No se pudo completar el procesamiento de la llamada.",
-  },
+/** Llamada completada con resumen completo (caso típico del pipeline). */
+const mockCallCompleted: CallDetail = {
+  id: "00000000-0000-4000-8000-000000000001",
+  callerNumber: "+50370001234",
+  startedAt: "2026-07-04T10:30:00Z",
+  endedAt: "2026-07-04T10:34:00Z",
+  durationSeconds: 240,
+  decision: "answer",
+  outcome: "completed",
+  matchedRule: "default_answer",
+  callerName: "Carlos",
+  callerCompany: "Telecom Promo",
+  reason: "Oferta comercial de plan de internet.",
+  summary:
+    "Carlos de Telecom Promo ofreció un cambio de plan de fibra con descuento promocional. Llamada comercial identificada como posible spam.",
+  category: "spam_comercial",
+  urgency: "baja",
+  isDegraded: false,
+  transcript: [
+    {
+      role: "agent",
+      message:
+        "Hola, ha llamado al asistente de María. ¿De parte de quién y cuál es el motivo de su llamada?",
+      time_in_call_secs: 0,
+    },
+    {
+      role: "user",
+      message: "Buenas, soy Carlos de Telecom Promo con una oferta de fibra.",
+      time_in_call_secs: 3,
+    },
+    {
+      role: "agent",
+      message: "Gracias Carlos. ¿Podría decirme el motivo en una frase?",
+      time_in_call_secs: 12,
+    },
+    {
+      role: "user",
+      message:
+        "Queremos cambiarle el plan de internet con descuento por tres meses.",
+      time_in_call_secs: 18,
+    },
+  ],
+};
+
+const mockCallSilent: CallDetail = {
+  id: "00000000-0000-4000-8000-000000000002",
+  callerNumber: "+50370005678",
+  startedAt: "2026-07-04T11:15:00Z",
+  endedAt: "2026-07-04T11:15:05Z",
+  durationSeconds: 5,
+  decision: "answer",
+  outcome: "silent_hangup",
+  matchedRule: "default_answer",
+  summary: "Llamada cerrada por silencio inicial del emisor.",
+  transcript: [
+    {
+      role: "agent",
+      message:
+        "Hola, ha llamado al asistente de María. ¿De parte de quién y cuál es el motivo de su llamada?",
+      time_in_call_secs: 0,
+    },
+  ],
+};
+
+const mockCallRejected: CallDetail = {
+  id: "00000000-0000-4000-8000-000000000003",
+  callerNumber: "+50370009999",
+  startedAt: "2026-07-04T09:00:00Z",
+  decision: "reject",
+  outcome: "rejected",
+  matchedRule: "blacklist:+50370009999",
+  reason: "Número en lista negra.",
+  summary: "Llamada rechazada automáticamente por reglas de filtrado.",
+  category: "spam_comercial",
+  urgency: "baja",
+};
+
+const mockCallPendingSummary: CallDetail = {
+  id: "00000000-0000-4000-8000-000000000004",
+  callerNumber: "+50371234567",
+  startedAt: "2026-07-04T14:20:00Z",
+  endedAt: "2026-07-04T14:22:30Z",
+  durationSeconds: 150,
+  decision: "answer",
+  outcome: "pending_summary",
+  matchedRule: "default_answer",
+  callerName: "Desconocido",
+  transcript: [
+    {
+      role: "agent",
+      message: "Hola, ha llamado al asistente de María. ¿En qué puedo ayudarle?",
+      time_in_call_secs: 0,
+    },
+    {
+      role: "user",
+      message: "Llamo por una encuesta de satisfacción del municipio.",
+      time_in_call_secs: 4,
+    },
+  ],
+};
+
+export const mockCallDetails: CallDetail[] = [
+  mockCallCompleted,
+  mockCallSilent,
+  mockCallRejected,
+  mockCallPendingSummary,
 ];
+
+export const mockCalls: CallListItem[] = mockCallDetails.map(
+  ({ transcript: _t, matchedRule: _m, ...listItem }) => listItem,
+);
+
+export function getMockCallById(id: string): CallDetail | null {
+  return mockCallDetails.find((call) => call.id === id) ?? null;
+}
 
 export const mockIntegrationStatuses: IntegrationStatus[] = [
   {

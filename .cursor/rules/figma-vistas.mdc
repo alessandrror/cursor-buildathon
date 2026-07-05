@@ -1,22 +1,25 @@
 ---
-description: Integrar/adaptar vistas y flujos desde el diseño de Figma de GhostLine
+description: Integrar/adaptar vistas y flujos de GhostLine desde el handoff visual (sin necesidad de Figma)
 globs: src/app/**,src/components/**
 alwaysApply: false
 ---
 
-# Adaptar vistas desde Figma
+# Adaptar vistas desde el handoff visual
 
-Al implementar o adaptar UI de GhostLine, usar el diseño de Figma como referencia.
+Para implementar/adaptar UI de GhostLine **no necesitas acceso a Figma**. La referencia
+es autocontenida en el repo:
 
-- **Archivo Figma:** fileKey `jPSxrx2T9RGogjNQRUEOAe`.
-- **Mapa frame → ruta/componente + node-ids:** `specs/design/figma-frames-map.md`.
-- **Cómo adaptar (pasos, reglas y criterios de aceptación):** `specs/design/agent-playbook.md`.
+- **Galería visual (referencia principal):** `specs/design/frames/README.md`
+  (imagen de cada vista + ruta/componente + criterios de aceptación).
+- **Imágenes:** `specs/design/frames/*.png`.
+- **Cómo adaptar (pasos y criterios):** `specs/design/agent-playbook.md`.
+- **Mapa frame → ruta/componente:** `specs/design/figma-frames-map.md`.
 
 Reglas vinculantes:
-- Extraer el diseño con el MCP de Figma (`get_design_context`, `get_screenshot`) por node-id;
-  no inventar valores.
-- Tokens solo desde `src/app/globals.css`; usar utilidades (`bg-primary`, `text-muted-foreground`,
-  `rounded-lg`, `font-display`). Cero colores hard-codeados.
+- Reproducir el diseño a partir de la imagen de la vista; mapear colores/spacings a los
+  tokens de `src/app/globals.css` (utilidades `bg-primary`, `text-muted-foreground`,
+  `rounded-lg`, `font-display`). **Cero colores hard-codeados.**
 - Reutilizar `src/components/ui/*` y `src/components/brand/ghostline-logo.tsx`; íconos `lucide-react`.
 - Vistas nuevas (Onboarding, Ajustes, Clonación de voz) → primero spec (SDD) antes de implementar.
 - Verificar light y dark. Sin marcadores de generación por IA en commits/PR.
+- Opcional (solo con acceso a Figma): node-ids en `figma-frames-map.md`, fileKey `jPSxrx2T9RGogjNQRUEOAe`.

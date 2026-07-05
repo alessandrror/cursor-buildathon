@@ -1,18 +1,20 @@
 # Integración de vistas y flujos desde Figma
 
-Estrategia para llevar el diseño de GhostLine (Figma) al código de este proyecto,
+Estrategia para llevar el diseño de GhostLine al código de este proyecto,
 reutilizando el design system ya centralizado y los componentes existentes, sin
 reescribir lo que ya está implementado.
 
-## Fuente de diseño
+## No se necesita acceso a Figma
 
-- **Archivo Figma:** `GhostLine — Design System`
-  - fileKey: `jPSxrx2T9RGogjNQRUEOAe`
-  - URL: https://www.figma.com/design/jPSxrx2T9RGogjNQRUEOAe
-- Los frames están **agrupados por flujo** (Público y acceso · Llamadas · Reglas y
-  simulador · Ajustes · Clonación de voz) y ordenados de izquierda a derecha.
-- Las **Variables de Figma son espejo** de `src/app/globals.css` (mismo color/spacing/
-  radio, con code syntax `var(--…)`). En Dev Mode cada valor muestra su token exacto.
+El handoff es **autocontenido en el repo**: quien implemente trabaja con las **imágenes
+de cada vista** en [`frames/`](./frames/README.md) + los tokens de `src/app/globals.css`
++ los componentes de `src/components/ui/*`. **No hace falta abrir Figma.**
+
+- **Referencia visual (principal):** [`frames/README.md`](./frames/README.md) — galería con
+  la imagen de cada vista, su ruta/componente y los criterios de aceptación.
+- **Figma (opcional, solo si tienes acceso):** archivo `GhostLine — Design System`,
+  fileKey `jPSxrx2T9RGogjNQRUEOAe`. Las Variables de Figma son **espejo** de
+  `src/app/globals.css`, así que el diseño ya está representado por los tokens del repo.
 
 ## Principios de integración
 
@@ -29,17 +31,19 @@ reescribir lo que ya está implementado.
 
 ## Documentos de esta carpeta
 
-- [`figma-frames-map.md`](./figma-frames-map.md) — tabla frame ↔ node-id ↔ ruta ↔
-  componentes ↔ estado (implementado / en rama / nuevo).
-- [`agent-playbook.md`](./agent-playbook.md) — pasos para que un agente adapte cada
-  vista con el MCP de Figma, reutilizando tokens y shadcn/ui, con criterios de
-  aceptación por vista.
+- [`frames/README.md`](./frames/README.md) — **galería visual** (imagen por vista + ruta +
+  criterios). Es el documento principal para implementar; no requiere Figma.
+- [`frames/`](./frames/) — imágenes PNG de cada vista.
+- [`figma-frames-map.md`](./figma-frames-map.md) — tabla frame ↔ imagen ↔ ruta ↔
+  componentes ↔ estado (+ node-id opcional para quien tenga Figma).
+- [`agent-playbook.md`](./agent-playbook.md) — pasos + criterios de aceptación para que
+  un agente adapte cada vista reutilizando tokens y shadcn/ui.
 
 ## Cómo empezar (resumen)
 
-1. Abrí el frame en Figma y tomá su `node-id` desde `figma-frames-map.md`.
-2. Pasáselo a un agente (`figma-to-code` o `sdd-frontend`) junto con el `agent-playbook.md`.
-3. El agente extrae el diseño con el MCP de Figma (`get_design_context` / `get_screenshot`),
-   adapta el componente/ruta existente o crea el nuevo reutilizando tokens y shadcn/ui,
-   y deja tests trazados a la spec.
+1. Abrí [`frames/README.md`](./frames/README.md) y ubicá la vista (imagen + ruta + criterios).
+2. Pasásela a un agente (`figma-to-code` o `sdd-frontend`) junto con el `agent-playbook.md`,
+   o impleméntala a mano.
+3. Reproducí el diseño reutilizando `src/components/ui/*` y los tokens de `globals.css`
+   (nada hard-codeado); íconos `lucide-react`. Dejá tests trazados a la spec.
 4. Revisión humana + verificación en light/dark antes de mergear.

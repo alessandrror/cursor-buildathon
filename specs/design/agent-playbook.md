@@ -3,21 +3,27 @@
 Guía para un agente (p. ej. `figma-to-code` o `sdd-frontend`) que implementa o adapta
 una vista a partir del diseño de Figma. Seguir en orden.
 
-## 0. Prerrequisitos
+## 0. Prerrequisitos (no requiere Figma)
 
-- MCP de Figma disponible (herramientas `get_design_context`, `get_screenshot`,
-  `get_variable_defs`, `get_metadata`).
-- fileKey: `jPSxrx2T9RGogjNQRUEOAe`. node-id de la vista: ver `figma-frames-map.md`.
-- Code Connect **no** está disponible en este plan de Figma; por eso el mapeo vive en
-  `figma-frames-map.md` y se extrae el diseño por nodo con `get_design_context`.
+- **Referencia principal:** la imagen de la vista en `frames/` (ver `frames/README.md`).
+- Tokens de diseño: ya en `src/app/globals.css`. Componentes: `src/components/ui/*`.
+- **No hace falta acceso a Figma.** El MCP de Figma es un camino **opcional** solo para
+  quien tenga acceso (ver §1b).
 
-## 1. Extraer el diseño (no inventar)
+## 1. Reproducir el diseño desde la imagen (camino por defecto)
 
-1. `get_metadata(fileKey, nodeId)` para ver la estructura del frame.
-2. `get_design_context(fileKey, nodeId)` para medidas, jerarquía y **tokens** (devuelve
-   los `var(--…)`, que ya existen en `globals.css`).
-3. `get_screenshot(fileKey, nodeId)` como referencia visual.
-4. Si una capa no resuelve, pedir el node-id de esa capa concreta; no adivinar.
+1. Abrí la imagen de la vista en `specs/design/frames/` y su ficha en `frames/README.md`
+   (ruta/componente + criterios de aceptación).
+2. Reconstruí el layout con Tailwind + shadcn/ui, mapeando los colores/spacings a los
+   **tokens** de `globals.css` (no adivinar hex; usar `bg-primary`, `rounded-lg`, etc.).
+3. Íconos: `lucide-react` (los frames usan los íconos oficiales de Lucide).
+4. Comparar el resultado (`bun run dev`) contra la imagen, en light y dark.
+
+## 1b. Extraer el diseño con el MCP de Figma (opcional, solo con acceso)
+
+- fileKey `jPSxrx2T9RGogjNQRUEOAe`; node-id en `figma-frames-map.md`.
+- `get_metadata` / `get_design_context` / `get_screenshot` por nodo. Code Connect no está
+  disponible en este plan, por eso el mapeo vive en `figma-frames-map.md`.
 
 ## 2. Reglas de implementación (vinculantes)
 
@@ -75,8 +81,9 @@ una vista a partir del diseño de Figma. Seguir en orden.
 
 ## 6. Prompt sugerido para el agente
 
-> Adapta la vista **`<nombre>`** (node-id `<node-id>`, fileKey `jPSxrx2T9RGogjNQRUEOAe`) al
-> código. Extrae el diseño con el MCP de Figma, reutiliza `src/components/ui/*` y los tokens
-> de `globals.css` (nada hard-codeado), íconos `lucide-react`. Respeta los criterios de
-> aceptación de `specs/design/agent-playbook.md`. Si la vista es nueva, primero propone la
-> spec. Verifica en light y dark. No incluyas marcadores de generación por IA en commits/PR.
+> Implementa/adapta la vista **`<nombre>`** al código usando como referencia la imagen
+> `specs/design/frames/<archivo>.png` y su ficha en `specs/design/frames/README.md`.
+> Reutiliza `src/components/ui/*` y los tokens de `globals.css` (nada hard-codeado), íconos
+> `lucide-react`. Respeta los criterios de aceptación del playbook. Si la vista es nueva,
+> primero propone la spec. Verifica en light y dark. No incluyas marcadores de generación
+> por IA en commits/PR. (Opcional, si tienes acceso a Figma: node-id en `figma-frames-map.md`.)

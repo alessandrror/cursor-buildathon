@@ -1,8 +1,13 @@
-# Mapa de frames Figma → código
+# Mapa de frames → código
 
-fileKey: `jPSxrx2T9RGogjNQRUEOAe` · abrir un nodo:
+**Para implementar no necesitas Figma:** la referencia visual está en
+[`frames/README.md`](./frames/README.md) (imagen por vista). Esta tabla añade la
+correspondencia con las rutas/componentes del código y, **opcionalmente**, el `node-id`
+de Figma para quien tenga acceso.
+
+Figma (opcional): fileKey `jPSxrx2T9RGogjNQRUEOAe` · abrir un nodo:
 `https://www.figma.com/design/jPSxrx2T9RGogjNQRUEOAe?node-id=<NODE-ID con guion>`
-(p. ej. node-id `31-29` para la Landing).
+(p. ej. `31-29` para la Landing). La columna "imagen" apunta al PNG local en `frames/`.
 
 Estado: ✅ implementado en `dev` · 🌿 existe en otra rama · 🆕 nuevo · 🎨 solo tematizar.
 

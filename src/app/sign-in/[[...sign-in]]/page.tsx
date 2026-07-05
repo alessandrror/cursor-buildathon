@@ -11,8 +11,6 @@ export default function SignInPage() {
         routing="path"
         path={routes.signIn}
         signUpUrl={routes.signUp}
-        forceRedirectUrl={routes.dashboard}
-        fallbackRedirectUrl={routes.dashboard}
       />
     </main>
   );

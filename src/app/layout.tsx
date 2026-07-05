@@ -117,7 +117,9 @@ export default async function RootLayout({
       signInUrl={routes.signIn}
       signUpUrl={routes.signUp}
       signInFallbackRedirectUrl={routes.dashboard}
-      signUpFallbackRedirectUrl={routes.dashboard}
+      signInForceRedirectUrl={routes.dashboard}
+      signUpFallbackRedirectUrl={routes.voiceOnboarding}
+      signUpForceRedirectUrl={routes.voiceOnboarding}
     >
       <html lang="es" suppressHydrationWarning>
         <body

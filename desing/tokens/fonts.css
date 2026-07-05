@@ -1,5 +1,0 @@
-/* GhostLine typefaces — served from Google Fonts.
-   NOTE: substitution flag — these are Google-hosted webfonts, not licensed
-   binaries. If GhostLine adopts self-hosted fonts, replace this @import with
-   local @font-face rules pointing at the copied .woff2 files. */
-@import url("https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;900&family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap");

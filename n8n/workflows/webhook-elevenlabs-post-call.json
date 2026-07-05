@@ -1,0 +1,890 @@
+{
+  "name": "elevenlabs-post-call",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "elevenlabs/post-call",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-entry",
+      "name": "Webhook — ElevenLabs Post-Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "elevenlabs-post-call"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ponytail: skip HMAC for demo — n8n Cloud no expone rawBody como bytes; agregar validación cuando se use reverse proxy que inyecte el raw body.\nconst item = $input.first().json;\n// webhook node v2 wraps payload en {headers, body, params, query}\nconst body = item.body ?? item;\nreturn [{ json: { valid: true, body } }];"
+      },
+      "id": "validate-hmac",
+      "name": "Validate ElevenLabs HMAC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "hmac-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "hmac-router",
+      "name": "HMAC Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "id": "insert-security-alert",
+      "name": "Insert security_alert event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        500
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://azxznrzktalkrnxkhzqh.supabase.co/rest/v1/system_events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ event_type: 'security_alert', payload: { reason: 'invalid_elevenlabs_hmac', path: '/webhook/elevenlabs/post-call' } }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Unauthorized' }) }}",
+        "options": {
+          "responseCode": 401,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-401",
+      "name": "Respond 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.body.data ?? $json.body;\nconst dyn = data.conversation_initiation_client_data?.dynamic_variables ?? {};\nconst clerkUserId = dyn.clerk_user_id ?? dyn.user_id ?? data.user_id ?? null;\nreturn [{\n  json: {\n    conversationId: data.conversation_id,\n    agentId: data.agent_id,\n    status: data.status,\n    callSid: data.metadata?.phone_call?.call_sid ?? null,\n    clerkUserId,\n    durationSeconds: data.metadata?.call_duration_secs ?? null,\n    transcript: Array.isArray(data.transcript) ? data.transcript : [],\n    summary: data.analysis?.transcript_summary ?? null,\n    callSuccessful: data.analysis?.call_successful ?? null,\n    body: data\n  }\n}];"
+      },
+      "id": "extract-fields",
+      "name": "Extract Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "conversation_id",
+              "keyValue": "={{ $json.conversationId }}",
+              "condition": "eq"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {},
+        "tableId": "call_transcripts"
+      },
+      "id": "check-idempotency",
+      "name": "Check Idempotency (call_transcripts)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-transcript",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        }
+      },
+      "id": "idempotency-router",
+      "name": "Already Processed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-200-idempotent",
+      "name": "Respond 200 Idempotent",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1560,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "has-sid",
+              "leftValue": "={{ $('Extract Fields').first().json.callSid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        }
+      },
+      "id": "has-twilio-sid",
+      "name": "Has Twilio SID?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1560,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "twilio_call_sid",
+              "keyValue": "={{ $('Extract Fields').first().json.callSid }}",
+              "condition": "eq"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {},
+        "tableId": "calls"
+      },
+      "id": "lookup-call",
+      "name": "Lookup Call by SID",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-call",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        }
+      },
+      "id": "call-found-router",
+      "name": "Call Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        300
+      ]
+    },
+    {
+      "id": "insert-orphan",
+      "name": "Insert orphan_webhook event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2220,
+        500
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://azxznrzktalkrnxkhzqh.supabase.co/rest/v1/system_events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ event_type: 'orphan_webhook', payload: { source: 'elevenlabs', conversation_id: $('Extract Fields').first().json.conversationId, call_sid: $('Extract Fields').first().json.callSid, clerk_user_id: $('Extract Fields').first().json.clerkUserId } }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-200-orphan",
+      "name": "Respond 200 Orphan",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2440,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "has-clerk-user",
+              "leftValue": "={{ $('Extract Fields').first().json.clerkUserId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        }
+      },
+      "id": "has-clerk-user-id",
+      "name": "Has Clerk User ID?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Extract Fields').first().json.clerkUserId }}",
+              "condition": "eq"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {},
+        "tableId": "users"
+      },
+      "id": "lookup-clerk-user",
+      "name": "Lookup Clerk User",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        460
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "clerk-user-found",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        }
+      },
+      "id": "clerk-user-found-router",
+      "name": "Clerk User Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2220,
+        460
+      ]
+    },
+    {
+      "id": "insert-webrtc-call",
+      "name": "Insert WebRTC Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2440,
+        460
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://azxznrzktalkrnxkhzqh.supabase.co/rest/v1/calls",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ user_id: $('Lookup Clerk User').first().json.id, twilio_call_sid: $('Extract Fields').first().json.conversationId, decision: 'answer', started_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $('Extract Fields').first().json;\n\n// Support both Twilio (Lookup Call by SID) and WebRTC (Insert WebRTC Call) paths\nlet callRow = {};\ntry { const r = $('Lookup Call by SID').first().json; if (r?.id) callRow = r; } catch {}\ntry { if (!callRow?.id) { const r = $('Insert WebRTC Call').first().json; if (r?.id) callRow = r; } } catch {}\n\nconst { status, transcript, durationSeconds, conversationId, agentId } = extracted;\n\nlet outcome;\nif (status === 'failed') outcome = 'agent_error';\nelse if (!transcript || transcript.length === 0) outcome = 'silent_hangup';\nelse outcome = 'completed';\n\nreturn [{\n  json: {\n    outcome,\n    durationSeconds: durationSeconds ?? null,\n    endedAt: new Date().toISOString(),\n    callId: callRow.id,\n    userId: callRow.user_id,\n    conversationId,\n    transcript,\n    agentId\n  }\n}];"
+      },
+      "id": "determine-outcome",
+      "name": "Determine Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        300
+      ]
+    },
+    {
+      "id": "insert-transcript",
+      "name": "Insert Transcript",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2440,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://azxznrzktalkrnxkhzqh.supabase.co/rest/v1/call_transcripts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ call_id: $json.callId, conversation_id: $json.conversationId, transcript: $json.transcript }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "update-call",
+      "name": "Update Call Outcome",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2660,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      },
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://azxznrzktalkrnxkhzqh.supabase.co/rest/v1/calls?id=eq.{{ $('Determine Outcome').first().json.callId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ outcome: $('Determine Outcome').first().json.outcome, duration_seconds: $('Determine Outcome').first().json.durationSeconds, ended_at: $('Determine Outcome').first().json.endedAt }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "insert-notification",
+      "name": "Insert Notification (outbox)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "hOsK6gvSyJWN6HU2",
+          "name": "Supabase account"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://azxznrzktalkrnxkhzqh.supabase.co/rest/v1/notifications",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ user_id: $('Determine Outcome').first().json.userId, call_id: $('Determine Outcome').first().json.callId, channel: 'push', payload: { outcome: $('Determine Outcome').first().json.outcome, agent_id: $('Determine Outcome').first().json.agentId, conversation_id: $('Determine Outcome').first().json.conversationId } }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3100,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook — ElevenLabs Post-Call": {
+      "main": [
+        [
+          {
+            "node": "Validate ElevenLabs HMAC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate ElevenLabs HMAC": {
+      "main": [
+        [
+          {
+            "node": "HMAC Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HMAC Valid?": {
+      "main": [
+        [
+          {
+            "node": "Extract Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert security_alert event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert security_alert event": {
+      "main": [
+        [
+          {
+            "node": "Respond 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Fields": {
+      "main": [
+        [
+          {
+            "node": "Check Idempotency (call_transcripts)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Idempotency (call_transcripts)": {
+      "main": [
+        [
+          {
+            "node": "Already Processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Processed?": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Idempotent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Twilio SID?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Twilio SID?": {
+      "main": [
+        [
+          {
+            "node": "Lookup Call by SID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Clerk User ID?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Call by SID": {
+      "main": [
+        [
+          {
+            "node": "Call Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Found?": {
+      "main": [
+        [
+          {
+            "node": "Determine Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert orphan_webhook event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert orphan_webhook event": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Orphan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Clerk User ID?": {
+      "main": [
+        [
+          {
+            "node": "Lookup Clerk User",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert orphan_webhook event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Clerk User": {
+      "main": [
+        [
+          {
+            "node": "Clerk User Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clerk User Found?": {
+      "main": [
+        [
+          {
+            "node": "Insert WebRTC Call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert orphan_webhook event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert WebRTC Call": {
+      "main": [
+        [
+          {
+            "node": "Determine Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Outcome": {
+      "main": [
+        [
+          {
+            "node": "Insert Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Transcript": {
+      "main": [
+        [
+          {
+            "node": "Update Call Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Call Outcome": {
+      "main": [
+        [
+          {
+            "node": "Insert Notification (outbox)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Notification (outbox)": {
+      "main": [
+        [
+          {
+            "node": "Respond 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": true
+}

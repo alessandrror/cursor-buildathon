@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghostline.app/schemas/summary-output.v1.json",
+  "title": "CallSummaryOutput",
+  "description": "Structured summary JSON from OpenAI (ChatGPT) for n8n validation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "caller_name",
+    "caller_company",
+    "reason",
+    "summary",
+    "category",
+    "urgency"
+  ],
+  "properties": {
+    "caller_name": {
+      "type": ["string", "null"],
+      "description": "Caller name if identified"
+    },
+    "caller_company": {
+      "type": ["string", "null"],
+      "description": "Company or organization if mentioned"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One-sentence reason for the call"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "2-4 sentence summary in Spanish"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "spam_comercial",
+        "encuesta",
+        "cobranza",
+        "posible_legitima",
+        "desconocida"
+      ]
+    },
+    "urgency": {
+      "type": "string",
+      "enum": ["baja", "media", "alta"]
+    }
+  }
+}

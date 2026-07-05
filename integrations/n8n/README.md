@@ -135,5 +135,3 @@ Ver [`contracts/idempotency-keys.md`](contracts/idempotency-keys.md).
 3. Simular post-call con curl al webhook n8n (payload de `elevenlabs-post-call-request.json`)
 4. Verificar filas en `calls`, `call_transcripts`, `call_summaries`
 5. Dashboard Next.js en `/dashboard` debe listar la llamada (RLS Clerk)
-
-Alternativa sin n8n: `POST /api/dev/simulate-call` (solo `NODE_ENV=development` + `DEV_API_KEY`).

@@ -3,25 +3,32 @@ import { AgentWidget } from "@/components/agent/agent-widget";
 import { CallListItemCard } from "@/components/dashboard/call-list-item";
 import { CallMetricsGrid } from "@/components/dashboard/call-metrics";
 import { CallsEmptyState } from "@/components/dashboard/calls-empty-state";
-import { MockDataBanner } from "@/components/dashboard/mock-data-banner";
-import {
-  getCallsForDashboard,
-  isMockCallsEnabled,
-} from "@/lib/calls/data-source";
+import { getCallsForDashboard } from "@/lib/calls/data-source";
 import { computeCallMetrics } from "@/lib/calls/presentation";
+import {
+  formatSupabaseError,
+  getSupabaseErrorHint,
+} from "@/lib/supabase/errors";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 export default async function DashboardPage() {
   const user = await currentUser();
   const ownerName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "el propietario";
 
-  const useMock = isMockCallsEnabled();
   let calls: Awaited<ReturnType<typeof getCallsForDashboard>> = [];
+  let loadError: string | null = null;
+  let loadHint: string | null = null;
 
-  try {
-    calls = await getCallsForDashboard();
-  } catch {
-    calls = [];
+  if (!isSupabaseConfigured()) {
+    loadError = "Faltan variables de entorno de Supabase.";
+  } else {
+    try {
+      calls = await getCallsForDashboard();
+    } catch (error) {
+      loadError = formatSupabaseError(error);
+      loadHint = getSupabaseErrorHint(error);
+    }
   }
 
   const metrics = computeCallMetrics(calls);
@@ -39,12 +46,6 @@ export default async function DashboardPage() {
           Revisa qué pasó mientras GhostLine protegía tu línea.
         </p>
       </header>
-
-      {useMock && (
-        <div className="mt-6">
-          <MockDataBanner />
-        </div>
-      )}
 
       {calls.length > 0 && (
         <section aria-label="Resumen del período" className="mt-8">
@@ -69,7 +70,7 @@ export default async function DashboardPage() {
         </div>
 
         {calls.length === 0 ? (
-          <CallsEmptyState />
+          <CallsEmptyState error={loadError} hint={loadHint} />
         ) : (
           <ul className="flex flex-col gap-3">
             {calls.map((call) => (

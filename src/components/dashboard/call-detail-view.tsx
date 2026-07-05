@@ -3,7 +3,6 @@ import { ArrowLeft } from "lucide-react";
 
 import { CallDetailAgendaCard } from "@/components/dashboard/call-detail-agenda-card";
 import { CallTranscript } from "@/components/dashboard/call-transcript";
-import { MockDataBanner } from "@/components/dashboard/mock-data-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { routes } from "@/lib/routes";
@@ -11,10 +10,9 @@ import type { CallDetail } from "@/types/call";
 
 type CallDetailViewProps = {
   call: CallDetail;
-  showMockBanner?: boolean;
 };
 
-export function CallDetailView({ call, showMockBanner }: CallDetailViewProps) {
+export function CallDetailView({ call }: CallDetailViewProps) {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
       <Button variant="ghost" size="sm" className="-ml-2 mb-4" asChild>
@@ -24,9 +22,8 @@ export function CallDetailView({ call, showMockBanner }: CallDetailViewProps) {
         </Link>
       </Button>
 
-      <header className="space-y-4">
+      <header>
         <CallDetailAgendaCard call={call} />
-        {showMockBanner && <MockDataBanner />}
       </header>
 
       {call.summary && (

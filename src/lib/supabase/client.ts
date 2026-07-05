@@ -19,6 +19,24 @@ export function createBrowserSupabaseClient(
   });
 }
 
+async function getBrowserClerkSupabaseAccessToken(
+  getToken: (options?: { template?: string }) => Promise<string | null>,
+): Promise<string | null> {
+  const template =
+    process.env.NEXT_PUBLIC_CLERK_SUPABASE_JWT_TEMPLATE?.trim() || "supabase";
+
+  try {
+    const templateToken = await getToken({ template });
+    if (templateToken) {
+      return templateToken;
+    }
+  } catch {
+    // Template no configurado — usar session token (integración nativa).
+  }
+
+  return (await getToken()) ?? null;
+}
+
 export function useSupabaseClient(): SupabaseClient<Database> | null {
   const { session, isLoaded } = useSession();
 
@@ -28,7 +46,13 @@ export function useSupabaseClient(): SupabaseClient<Database> | null {
     }
 
     return createBrowserSupabaseClient(async () => {
-      return (await session?.getToken()) ?? null;
+      if (!session) {
+        return null;
+      }
+
+      return getBrowserClerkSupabaseAccessToken((options) =>
+        session.getToken(options),
+      );
     });
   }, [isLoaded, session]);
 }

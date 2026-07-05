@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "env:setup": "cp .env.example .env.local",
+    "env:setup": "cp .env.example .env",
     "clerk:login": "bunx clerk auth login",
     "clerk:init": "bunx clerk init --app app_3G3kypE1PlLZ2ATrTEnhXONzf1U",
     "clerk:doctor": "bunx clerk doctor",

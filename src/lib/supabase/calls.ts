@@ -5,7 +5,7 @@ import type {
   DbCallTranscript,
 } from "@/types/database";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getClerkScopedSupabase } from "@/lib/supabase/clerk-scoped-server";
 
 type CallWithSummary = DbCall & {
   call_summaries: DbCallSummary | DbCallSummary[] | null;
@@ -76,12 +76,22 @@ export function mapDbCallToDetail(row: CallWithRelations): CallDetail {
 }
 
 export async function getCallsForCurrentUser(): Promise<CallListItem[]> {
-  const supabase = await createServerSupabaseClient();
+  const { userId, supabase, useUserFilter } = await getClerkScopedSupabase();
 
-  const { data, error } = await supabase
+  if (!userId || !supabase) {
+    return [];
+  }
+
+  let query = supabase
     .from("calls")
     .select("*, call_summaries(*)")
     .order("started_at", { ascending: false });
+
+  if (useUserFilter) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -91,13 +101,22 @@ export async function getCallsForCurrentUser(): Promise<CallListItem[]> {
 }
 
 export async function getCallById(id: string): Promise<CallDetail | null> {
-  const supabase = await createServerSupabaseClient();
+  const { userId, supabase, useUserFilter } = await getClerkScopedSupabase();
 
-  const { data, error } = await supabase
+  if (!userId || !supabase) {
+    return null;
+  }
+
+  let query = supabase
     .from("calls")
     .select("*, call_summaries(*), call_transcripts(*)")
-    .eq("id", id)
-    .maybeSingle();
+    .eq("id", id);
+
+  if (useUserFilter) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     throw error;

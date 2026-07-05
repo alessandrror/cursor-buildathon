@@ -120,3 +120,26 @@ export async function deleteUserFromClerk(userId: string) {
 
   return { ok: true as const };
 }
+
+export async function getOnboardingCompletedForUser(
+  userId: string,
+): Promise<boolean> {
+  if (!isSupabaseAdminConfigured()) {
+    return false;
+  }
+
+  const supabase = createAdminSupabaseClient();
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("onboarding_completed")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[users] onboarding status lookup failed:", error.message);
+    return false;
+  }
+
+  return data?.onboarding_completed ?? false;
+}
